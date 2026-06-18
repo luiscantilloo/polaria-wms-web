@@ -1,0 +1,58 @@
+---
+description: Paleta de colores y reglas visuales de polaria.tech para todo diseño UI
+alwaysApply: true
+---
+
+# Sistema visual polaria.tech
+
+Al implementar o modificar **cualquier diseño UI**, usar exclusivamente la paleta definida en `src/app/globals.css` y documentada en `src/styles/polaria-palette.md`.
+
+## Colores base (obligatorios)
+
+| Token CSS | Valor | Uso |
+|-----------|-------|-----|
+| `--bg` | `#020609` | Fondo principal |
+| `--teal` | `#00e5cc` | Acento de marca, CTAs, highlights |
+| `--w` | `#f8f8f6` | Texto principal |
+
+## Variantes de opacidad
+
+- `--t20` / `polaria-t-20` — bordes, líneas decorativas
+- `--t08` / `polaria-t-08` — fondos de tarjetas
+- `--w50` / `polaria-w-50` — subtítulos, texto secundario
+- `--w20` / `polaria-w-20` — labels inactivos, footer
+- `--w08` / `polaria-w-08` — separadores, inputs
+
+## Efectos
+
+- Aurora: `.polaria-aurora` (no colores custom)
+- Glow logo: `--teal-glow` / `.polaria-teal-glow`
+- Glow tarjeta: `--teal-glow-strong` / `.polaria-card-glow`
+- Gradiente texto: `.polaria-gradient-stat`
+
+## Clases Tailwind preferidas
+
+```
+bg-polaria-bg          text-polaria-w
+bg-polaria-teal        text-polaria-bg (texto sobre botón teal)
+text-polaria-teal      text-polaria-w-50
+border-polaria-t-20    bg-polaria-t-08
+bg-polaria-w-08
+```
+
+## Tipografía (clases CSS en globals.css)
+
+Usar siempre `.polaria-text-*` y `.polaria-topbar-*` en pantallas nuevas.
+
+## Prohibido
+
+- No usar `#00f0d4`, `#050505`, `zinc-*`, `cyan-*` de Tailwind genérico ni otros colores fuera de la paleta.
+- No hardcodear `rgba(...)` en componentes; usar variables CSS o clases del tema.
+
+## Ejemplo botón primario
+
+```tsx
+<button className="rounded-xl bg-polaria-teal px-4 py-3 font-semibold text-polaria-bg hover:opacity-90">
+  Continuar
+</button>
+```

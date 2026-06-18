@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Polaria WMS Web
 
-## Getting Started
+Frontend web del **Sistema de Gestión de Almacenes (WMS)** Polaria. Construido con [Next.js 16](https://nextjs.org), React 19 y TypeScript.
 
-First, run the development server:
+## Inicio rápido
 
 ```bash
+npm install
+cp .env.example .env.local   # configurar URL del API
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000/login](http://localhost:3000/login) en el navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Variables de entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Descripción | Valor por defecto |
+|----------|-------------|-------------------|
+| `NEXT_PUBLIC_API_BASE_URL` | URL del backend `polaria-wms-api` | `http://localhost:3001` |
 
-## Learn More
+Ver [docs/AUTH.md](docs/AUTH.md) para el flujo de login completo y pruebas manuales.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts disponibles
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Comando        | Descripción                          |
+|----------------|--------------------------------------|
+| `npm run dev`  | Servidor de desarrollo               |
+| `npm run build`| Compilación de producción            |
+| `npm run start`| Servidor de producción               |
+| `npm run lint` | Análisis estático con ESLint         |
+| `npm test`     | Tests unitarios (Vitest)             |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estructura del proyecto
 
-## Deploy on Vercel
+```
+polaria-wms-web/
+├── public/              # Archivos estáticos públicos (favicon, imágenes, SVG)
+├── src/
+│   ├── app/             # App Router de Next.js (páginas, layouts, rutas API)
+│   ├── assets/          # Recursos estáticos internos (iconos, imágenes)
+│   ├── components/      # Componentes React reutilizables
+│   ├── config/          # Configuración de la aplicación (env, rutas)
+│   ├── constants/       # Constantes globales (roles, permisos)
+│   ├── hooks/           # Custom hooks de React
+│   ├── lib/             # Utilidades y helpers compartidos
+│   ├── modules/         # Módulos de dominio del WMS (lógica por área de negocio)
+│   ├── providers/       # Proveedores de contexto React
+│   ├── services/        # Capa de servicios (API, Supabase, integraciones)
+│   ├── stores/          # Estado global de la aplicación
+│   ├── styles/          # Estilos globales adicionales
+│   └── types/           # Definiciones de tipos TypeScript
+├── next.config.ts       # Configuración de Next.js
+├── tsconfig.json        # Configuración de TypeScript
+└── postcss.config.mjs   # Configuración de PostCSS / Tailwind CSS
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Cada carpeta dentro de `src/` tiene su propio `README.md` con detalles sobre su propósito y convenciones.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stack tecnológico
+
+- **Framework:** Next.js 16 (App Router)
+- **UI:** React 19, Tailwind CSS 4
+- **Lenguaje:** TypeScript 5
+- **Backend (previsto):** Supabase
+
+## Estado actual
+
+- **Auth / Login:** flujo de 3 escenas implementado y conectado al API (`/auth/prelogin`, `/auth/login`, `/auth/me`, `/auth/logout`).
+- **Resto de módulos WMS:** estructura definida; implementación pendiente.

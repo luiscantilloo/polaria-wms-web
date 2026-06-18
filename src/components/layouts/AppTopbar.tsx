@@ -1,0 +1,151 @@
+"use client";
+
+import { useCallback, useMemo } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { LayoutGrid, LogOut, MessageCircle } from "lucide-react";
+import { ROUTES } from "@/config/routes";
+import { useLiveDate } from "@/hooks/useLiveDate";
+import {
+  getSessionDisplayName,
+  getSessionInitial,
+  getSessionUsername,
+} from "@/lib/auth-session";
+import { cn } from "@/lib/cn";
+import { useAuthStore } from "@/stores/auth.store";
+import type { TopbarUserInfo } from "@/types/layout";
+
+interface AppTopbarProps {
+  onMenuClick?: () => void;
+  onMateoIaClick?: () => void;
+}
+
+const ICON = "h-4 w-4 shrink-0";
+const TOPBAR_SHAPE = "rounded-[0.625rem]";
+
+function buildFallbackUser(): TopbarUserInfo {
+  return {
+    nombre: "Usuario",
+    identificador: "usuario",
+    initial: "U",
+  };
+}
+
+export function AppTopbar({ onMenuClick, onMateoIaClick }: AppTopbarProps) {
+  const router = useRouter();
+  const session = useAuthStore((s) => s.session);
+  const performLogout = useAuthStore((s) => s.performLogout);
+  const { label: dateLabel, dateTime } = useLiveDate();
+
+  const user = useMemo((): TopbarUserInfo => {
+    if (!session) return buildFallbackUser();
+    return {
+      nombre: getSessionDisplayName(session),
+      identificador: getSessionUsername(session),
+      initial: getSessionInitial(session),
+    };
+  }, [session]);
+
+  const handleLogout = useCallback(async () => {
+    await performLogout();
+    router.replace(ROUTES.login);
+  }, [performLogout, router]);
+
+  const handleMenuClick = useCallback(() => {
+    onMenuClick?.();
+  }, [onMenuClick]);
+
+  const handleMateoIaClick = useCallback(() => {
+    onMateoIaClick?.();
+  }, [onMateoIaClick]);
+
+  return (
+    <header className="polaria-topbar relative z-20 w-full shrink-0">
+      <div className="polaria-topbar__inner mx-auto max-w-[90rem] px-2 py-2 sm:px-6 sm:py-3 lg:px-8">
+        <div className="polaria-topbar__grid">
+          <div className="polaria-topbar__start">
+            <div className="polaria-topbar__date">
+              <span className="polaria-text-label">Fecha</span>
+              <time dateTime={dateTime} className="polaria-text-body-sm mt-0.5">
+                {dateLabel}
+              </time>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleMenuClick}
+              aria-label="Abrir menú"
+              className={cn(
+                "polaria-topbar-btn polaria-topbar-btn--menu polaria-topbar-btn--label-sm",
+                TOPBAR_SHAPE,
+              )}
+            >
+              <LayoutGrid className={cn(ICON, "text-polaria-teal")} />
+              <span className="polaria-topbar-btn__label">Menú</span>
+            </button>
+          </div>
+
+          <div className="polaria-topbar__center">
+            <Image
+              src="/logo.png"
+              alt="Polaria"
+              width={120}
+              height={32}
+              priority
+              className="polaria-topbar__logo"
+            />
+          </div>
+
+          <div className="polaria-topbar__end">
+            <button
+              type="button"
+              onClick={handleMateoIaClick}
+              aria-label="Abrir Mateo IA"
+              className={cn(
+                "polaria-topbar-btn polaria-topbar-btn--teal polaria-topbar-btn--label-lg",
+                TOPBAR_SHAPE,
+              )}
+            >
+              <MessageCircle className={ICON} />
+              <span className="polaria-topbar-btn__label">Mateo IA</span>
+            </button>
+
+            <div
+              className={cn("polaria-topbar-user", TOPBAR_SHAPE)}
+              aria-label={`Usuario: ${user.nombre}`}
+              title={`${user.nombre} (${user.identificador})`}
+            >
+              <span className="polaria-topbar-user__avatar">{user.initial}</span>
+              <span className="polaria-topbar-user__info">
+                <span className="polaria-topbar-user__name" title={user.nombre}>
+                  {user.nombre}
+                </span>
+                <span
+                  className="polaria-topbar-user__id"
+                  title={user.identificador}
+                >
+                  {user.identificador}
+                </span>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Cerrar sesión"
+              className={cn(
+                "polaria-topbar-btn polaria-topbar-btn--danger polaria-topbar-btn--label-sm",
+                TOPBAR_SHAPE,
+              )}
+            >
+              <LogOut className={ICON} />
+              <span className="polaria-topbar-btn__label">Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="polaria-topbar-divider" aria-hidden />
+    </header>
+  );
+}
