@@ -10,7 +10,7 @@ cp .env.example .env.local   # configurar URL del API
 npm run dev
 ```
 
-Abre [http://localhost:3000/login](http://localhost:3000/login) en el navegador.
+Abre [http://localhost:3001/login](http://localhost:3001/login) en el navegador.
 
 ### Variables de entorno
 
@@ -24,9 +24,9 @@ Ver [docs/AUTH.md](docs/AUTH.md) para el flujo de login completo y pruebas manua
 
 | Comando        | Descripción                          |
 |----------------|--------------------------------------|
-| `npm run dev`  | Servidor de desarrollo               |
+| `npm run dev`  | Servidor de desarrollo (puerto **3001**) |
 | `npm run build`| Compilación de producción            |
-| `npm run start`| Servidor de producción               |
+| `npm run start`| Servidor de producción (puerto **3001**) |
 | `npm run lint` | Análisis estático con ESLint         |
 | `npm test`     | Tests unitarios (Vitest)             |
 

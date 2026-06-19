@@ -20,14 +20,14 @@ En desarrollo, el frontend proxea las peticiones del navegador vía `/api/*` →
 
 1. Levanta el backend (`polaria-wms-api`) en el puerto **3000** (o el que configures en `.env.local`).
 2. Configura `.env.local` con la URL del API.
-3. En este proyecto, arranca Next en otro puerto si hace falta:
+3. Arranca el frontend:
 
 ```bash
 npm install
-npm run dev -- -p 3001
+npm run dev
 ```
 
-4. Abre [http://localhost:3000/login](http://localhost:3000/login).
+4. Abre [http://localhost:3001/login](http://localhost:3001/login).
 
 ## Flujo de prueba manual
 

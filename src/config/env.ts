@@ -1,6 +1,7 @@
 export const env = {
   apiBaseUrl:
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000",
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    "https://polaria-wms-api.onrender.com",
 } as const;
 
 /** En el navegador usa el proxy `/api` de Next.js para evitar CORS en dev. */
