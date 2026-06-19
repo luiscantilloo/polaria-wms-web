@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowRight, Building2, Loader2, User } from "lucide-react";
+import { ArrowRight, Building2, Loader2, MessageCircle, Monitor, User } from "lucide-react";
+import { isEmailIdentificador } from "@/lib/mateo-sso";
 import { cn } from "@/lib/cn";
 
 interface LoginStepUserProps {
@@ -29,12 +30,16 @@ export function LoginStepUser({
     onSubmit();
   };
 
+  const trimmed = identificador.trim();
+  const isEmail = trimmed.length > 0 && isEmailIdentificador(trimmed);
+  const isUsername = trimmed.length > 0 && !isEmailIdentificador(trimmed);
+
   return (
     <div className="polaria-card-glow rounded-2xl border border-polaria-t-20 bg-polaria-t-08 p-6 backdrop-blur-xl sm:p-8">
       <p className="mb-6 text-center text-sm text-polaria-w-50">
         {showCodigoEmpresa
           ? "Ingresa el código de tu empresa para continuar"
-          : "Ingresa tu nombre de usuario para continuar"}
+          : "Ingresa tu correo o identificador para continuar"}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -44,18 +49,31 @@ export function LoginStepUser({
             className="mb-2 flex items-center gap-2 text-sm font-medium text-polaria-teal"
           >
             <User className="h-4 w-4" />
-            Usuario
+            Correo o identificador
           </label>
           <input
             id="identificador"
             type="text"
             autoComplete="username"
-            placeholder="Tu nombre de usuario"
+            placeholder="Correo electrónico o nombre de usuario"
             value={identificador}
             onChange={(e) => onIdentificadorChange(e.target.value)}
             disabled={isLoading}
             className="w-full rounded-xl border border-polaria-w-08 bg-polaria-w-08 px-4 py-3 text-polaria-w placeholder:text-polaria-w-20 outline-none transition focus:border-polaria-t-20 focus:ring-1 focus:ring-polaria-t-20 disabled:opacity-60"
           />
+          {/* Indicador dinámico del destino */}
+          {isEmail && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-polaria-w-50">
+              <Monitor className="h-3 w-3 shrink-0 text-polaria-teal" />
+              Accederás al sistema WMS
+            </p>
+          )}
+          {isUsername && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-polaria-w-50">
+              <MessageCircle className="h-3 w-3 shrink-0 text-polaria-teal" />
+              Accederás a Mateo IA
+            </p>
+          )}
         </div>
 
         {showCodigoEmpresa && (

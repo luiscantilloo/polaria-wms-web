@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPostLoginRoute } from "@/config/routes";
+import { buildMateoUrl, isEmailIdentificador } from "@/lib/mateo-sso";
 import { prelogin } from "@/modules/auth";
 import { ApiError } from "@/services/api";
 import { useAuthStore } from "@/stores/auth.store";
@@ -12,6 +13,7 @@ import { LoginStepSuccess } from "./LoginStepSuccess";
 import { LoginStepUser } from "./LoginStepUser";
 
 type Step = "user" | "password" | "success";
+type LoginDestination = "wms" | "mateo";
 
 const REDIRECT_DELAY_MS = 2000;
 
@@ -27,6 +29,7 @@ export function LoginFlow() {
   const [flow, setFlow] = useState<AuthFlow | null>(null);
   const [userPreview, setUserPreview] = useState<UserPreview | null>(null);
   const [successSession, setSuccessSession] = useState<AuthSession | null>(null);
+  const [loginDestination, setLoginDestination] = useState<LoginDestination>("wms");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,12 +84,26 @@ export function LoginFlow() {
       }
 
       const authSession = await performLogin(payload);
+      const destination: LoginDestination = isEmailIdentificador(
+        identificador.trim(),
+      )
+        ? "wms"
+        : "mateo";
+
       setSuccessSession(authSession);
+      setLoginDestination(destination);
       setStep("success");
 
-      setTimeout(() => {
-        router.replace(getPostLoginRoute(authSession.scope));
-      }, REDIRECT_DELAY_MS);
+      if (destination === "mateo") {
+        // Redirige al chatbot Mateo con el usuario pre-autenticado vía SSO
+        setTimeout(() => {
+          router.replace(buildMateoUrl(authSession));
+        }, REDIRECT_DELAY_MS);
+      } else {
+        setTimeout(() => {
+          router.replace(getPostLoginRoute(authSession.scope));
+        }, REDIRECT_DELAY_MS);
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -105,7 +122,9 @@ export function LoginFlow() {
   };
 
   if (step === "success" && successSession) {
-    return <LoginStepSuccess session={successSession} />;
+    return (
+      <LoginStepSuccess session={successSession} destination={loginDestination} />
+    );
   }
 
   if (step === "password" && userPreview) {
