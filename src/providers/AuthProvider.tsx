@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import {
+  installAuthSyncListeners,
+  revalidateAuthSession,
+} from "@/lib/auth-sync";
 import { useAuthStore } from "@/stores/auth.store";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const hydrateSession = useAuthStore((s) => s.hydrateSession);
   const isHydrated = useAuthStore((s) => s.isHydrated);
+  const hasInitialValidated = useRef(false);
+
+  useEffect(() => installAuthSyncListeners(), []);
 
   useEffect(() => {
-    if (!isHydrated) {
-      void hydrateSession();
-    }
-  }, [hydrateSession, isHydrated]);
+    if (!isHydrated || hasInitialValidated.current) return;
+    hasInitialValidated.current = true;
+    void revalidateAuthSession();
+  }, [isHydrated]);
 
   return <>{children}</>;
 }

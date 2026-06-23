@@ -13,6 +13,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async headers() {
+    const noStore = [
+      { key: "Cache-Control", value: "no-store, must-revalidate" },
+    ];
+
+    return [
+      { source: "/configurador", headers: noStore },
+      { source: "/configurador/:path*", headers: noStore },
+      { source: "/dashboard", headers: noStore },
+      { source: "/dashboard/:path*", headers: noStore },
+      { source: "/platform", headers: noStore },
+      { source: "/platform/:path*", headers: noStore },
+    ];
+  },
 };
 
 export default nextConfig;

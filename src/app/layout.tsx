@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AuthSessionBootstrap } from "@/components/auth/AuthSessionBootstrap";
+import { AuthSessionScript } from "@/components/auth/AuthSessionScript";
 import { AuthProvider } from "@/providers/AuthProvider";
 import "./globals.css";
 
@@ -29,7 +31,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthSessionScript />
+        <AuthProvider>
+          <AuthSessionBootstrap />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

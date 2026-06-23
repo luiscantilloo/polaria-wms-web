@@ -3,6 +3,11 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/config/routes";
+import {
+  getPersistedAccessToken,
+  isActiveAuthSession,
+  syncAuthWithPersistedStorage,
+} from "@/lib/auth-sync";
 import { useAuthStore } from "@/stores/auth.store";
 
 interface AuthGuardProps {
@@ -15,12 +20,18 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
   const accessToken = useAuthStore((s) => s.accessToken);
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const persistedToken = getPersistedAccessToken();
+  const sessionIsActive = isActiveAuthSession(accessToken, persistedToken);
 
   useEffect(() => {
-    if (isHydrated && !isLoading && !accessToken) {
+    syncAuthWithPersistedStorage();
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !isLoading && !sessionIsActive) {
       router.replace(ROUTES.login);
     }
-  }, [accessToken, isHydrated, isLoading, router]);
+  }, [isHydrated, isLoading, router, sessionIsActive]);
 
   if (!isHydrated || isLoading) {
     return (
@@ -32,7 +43,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     );
   }
 
-  if (!accessToken) {
+  if (!sessionIsActive) {
     return null;
   }
 

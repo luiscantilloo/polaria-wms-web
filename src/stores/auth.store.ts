@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { getMe, login, logout } from "@/modules/auth";
+import { notifyAuthChanged } from "@/lib/auth-broadcast";
+import {
+  AUTH_STORAGE_KEY,
+  authPersistStorage,
+  ensureAuthOnlyInLocalStorage,
+  removeAuthFromLocalStorage,
+} from "@/lib/auth-storage";
 import { setAccessTokenGetter } from "@/services/api";
 import type {
   AuthContext,
@@ -11,7 +18,7 @@ import type {
   UserPreview,
 } from "@/types/auth";
 
-const STORAGE_KEY = "polaria-auth";
+export { AUTH_STORAGE_KEY };
 
 interface AuthState {
   accessToken: string | null;
@@ -40,12 +47,15 @@ export const useAuthStore = create<AuthState>()(
       isHydrated: false,
       isLoading: false,
 
-      setTokens: (tokens, context) =>
+      setTokens: (tokens, context) => {
         set({
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           context,
-        }),
+        });
+        ensureAuthOnlyInLocalStorage();
+        notifyAuthChanged();
+      },
 
       setSession: (session) =>
         set({
@@ -53,13 +63,17 @@ export const useAuthStore = create<AuthState>()(
           context: { scope: session.scope },
         }),
 
-      clearAuth: () =>
+      clearAuth: () => {
         set({
           accessToken: null,
           refreshToken: null,
           context: null,
           session: null,
-        }),
+        });
+
+        ensureAuthOnlyInLocalStorage();
+        notifyAuthChanged();
+      },
 
       setHydrated: (value) => set({ isHydrated: value }),
       setLoading: (value) => set({ isLoading: value }),
@@ -84,6 +98,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       hydrateSession: async () => {
+        ensureAuthOnlyInLocalStorage();
         const { accessToken } = get();
         if (!accessToken) {
           set({ isHydrated: true });
@@ -112,18 +127,20 @@ export const useAuthStore = create<AuthState>()(
           // clear local session even if remote logout fails
         } finally {
           get().clearAuth();
+          removeAuthFromLocalStorage();
         }
       },
     }),
     {
-      name: STORAGE_KEY,
-      storage: createJSONStorage(() => sessionStorage),
+      name: AUTH_STORAGE_KEY,
+      storage: createJSONStorage(() => authPersistStorage),
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         context: state.context,
       }),
       onRehydrateStorage: () => (state) => {
+        ensureAuthOnlyInLocalStorage();
         state?.setHydrated(true);
       },
     },

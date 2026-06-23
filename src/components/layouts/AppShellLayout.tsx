@@ -5,6 +5,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { env } from "@/config/env";
 import { mateoHandoff } from "@/modules/auth";
 import { ApiError } from "@/services/api";
+import { useAuthStore } from "@/stores/auth.store";
 import { AppTopbar } from "./AppTopbar";
 
 interface AppShellLayoutProps {
@@ -16,6 +17,7 @@ interface AppShellLayoutProps {
  * Incluye topbar compartido para todos los roles y vistas.
  */
 export function AppShellLayout({ children }: AppShellLayoutProps) {
+  const performLogout = useAuthStore((s) => s.performLogout);
   const [mateoLoading, setMateoLoading] = useState(false);
   const [mateoError, setMateoError] = useState<string | null>(null);
 
@@ -27,8 +29,11 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
 
     try {
       const { code } = await mateoHandoff();
+      await performLogout();
       const mateoBaseUrl = env.mateoUrl.replace(/\/$/, "");
-      window.location.href = `${mateoBaseUrl}/auth/sso?code=${encodeURIComponent(code)}`;
+      window.location.replace(
+        `${mateoBaseUrl}/auth/sso?code=${encodeURIComponent(code)}`,
+      );
     } catch (err) {
       setMateoLoading(false);
       if (err instanceof ApiError) {
@@ -44,7 +49,7 @@ export function AppShellLayout({ children }: AppShellLayoutProps) {
         setMateoError("No se pudo abrir Mateo IA. Intenta de nuevo.");
       }
     }
-  }, [mateoLoading]);
+  }, [mateoLoading, performLogout]);
 
   return (
     <AuthGuard>
