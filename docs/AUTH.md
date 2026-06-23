@@ -57,21 +57,43 @@ El campo de login valida formato de correo antes de llamar al API.
 
 ## SSO con Mateo IA
 
+Integración bidireccional entre WMS y Mateo usando códigos de un solo uso (`POST /auth/mateo-exchange`).
+
+### WMS → Mateo (salida)
+
 Usuario autenticado en el WMS puede abrir Mateo sin volver a iniciar sesión:
 
 1. Clic en **Mateo IA** en el topbar.
 2. El frontend llama `POST /auth/mateo-handoff` con el Bearer token actual.
 3. El API devuelve `{ code, expiresIn }`.
-4. Redirección a `{NEXT_PUBLIC_MATEO_URL}/auth/sso?code={code}`.
-5. Mateo (repo `chatbot-mateo`) canjea el código; el WMS no implementa `/auth/sso`.
+4. El WMS cierra sesión local y redirige a `{NEXT_PUBLIC_MATEO_URL}/auth/sso?code={code}`.
+5. Mateo (repo `chatbot-mateo`) canjea el código con su propio flujo.
 
 Si falla el handoff, se muestra un mensaje de error debajo del topbar. El botón muestra loading mientras se genera el código.
+
+### Mateo → WMS (entrada)
+
+Usuario autenticado en Mateo puede abrir el WMS sin volver a iniciar sesión:
+
+1. Clic en **Polaria WMS** en Mateo.
+2. Mateo cierra sesión local y redirige a `{WMS_URL}/auth/sso?code={code}`.
+3. La ruta `/auth/sso` (fuera del shell protegido) canjea el código con `POST /auth/mateo-exchange`.
+4. Se guardan tokens en `localStorage` (`polaria-auth`), se hidrata sesión con `GET /auth/me` y se redirige según scope:
+   - `platform` → `/configurador`
+   - `tenant` → `/dashboard`
+
+**Respaldo hash:** Mateo también puede enviar `#polaria-auth=<base64url>` con el payload zustand. `AuthSessionScript` lo importa de forma síncrona (antes del guard de rutas protegidas), escribe en `localStorage` y limpia el hash.
+
+Estados de error en `/auth/sso`:
+
+- Sin `?code=` → mensaje amigable + enlace a `/login`.
+- Código inválido o expirado (401) → mensaje específico + enlace a `/login`.
 
 ## Arquitectura
 
 ```
 components/auth/     → UI (LoginStepUser, LoginStepPassword, LoginStepSuccess, LoginFlow)
-modules/auth/        → Servicio API (prelogin, login, me, logout, mateoHandoff)
+modules/auth/        → Servicio API (prelogin, login, me, logout, mateoHandoff, wmsSsoExchange)
 services/api.ts      → Cliente HTTP + interceptor Bearer + errores tipados
 stores/auth.store.ts → Estado de sesión (sessionStorage)
 providers/           → AuthProvider (hidrata sesión al cargar)
@@ -88,6 +110,7 @@ components/layouts/  → AppShellLayout conecta Mateo IA al topbar
 | GET | `/auth/me` | Hidratar contexto de sesión |
 | POST | `/auth/logout` | Cerrar sesión |
 | POST | `/auth/mateo-handoff` | Generar código SSO para Mateo IA (Bearer) |
+| POST | `/auth/mateo-exchange` | Canjear código SSO desde Mateo IA (público) |
 
 ## Errores manejados en UI
 
@@ -105,4 +128,4 @@ components/layouts/  → AppShellLayout conecta Mateo IA al topbar
 npm test
 ```
 
-Incluye pruebas del mapeo de errores, del happy path del servicio de auth (con `fetch` mockeado) y de `mateoHandoff`.
+Incluye pruebas del mapeo de errores, del happy path del servicio de auth (con `fetch` mockeado), de `mateoHandoff`, de `wmsSsoExchange` y del flujo `/auth/sso`.

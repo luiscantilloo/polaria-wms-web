@@ -1,7 +1,9 @@
+import { AUTH_HASH_PREFIX } from "@/lib/auth-hash-import";
 import { AUTH_STORAGE_KEY } from "@/lib/auth-storage";
 
 /**
  * Script síncrono que corre antes de React.
+ * - Importa sesión desde #polaria-auth= (SSO Mateo → WMS).
  * - Fuerza polaria-auth solo en localStorage (nunca sessionStorage).
  * - Evita que bfcache muestre rutas protegidas sin sesión.
  */
@@ -9,6 +11,7 @@ export function AuthSessionScript() {
   const script = `
 (function () {
   var KEY = ${JSON.stringify(AUTH_STORAGE_KEY)};
+  var HASH_PREFIX = ${JSON.stringify(AUTH_HASH_PREFIX)};
 
   function purgeSessionAuth() {
     try {
@@ -23,6 +26,28 @@ export function AuthSessionScript() {
         if (legacy) localStorage.setItem(KEY, legacy);
       }
       purgeSessionAuth();
+    } catch (e) {}
+  }
+
+  function importAuthFromHash() {
+    try {
+      var hash = window.location.hash;
+      if (!hash || hash.indexOf(HASH_PREFIX) !== 0) return;
+      var encoded = hash.substring(HASH_PREFIX.length);
+      if (!encoded) return;
+      var b64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      var decoded = atob(b64);
+      var payload = JSON.parse(decoded);
+      var state = payload.state || payload;
+      if (!state || !state.accessToken) return;
+      var stored = payload.state
+        ? payload
+        : { state: state, version: 0 };
+      if (stored.version === undefined) stored.version = 0;
+      localStorage.setItem(KEY, JSON.stringify(stored));
+      var clean = window.location.pathname + window.location.search;
+      history.replaceState(null, "", clean);
     } catch (e) {}
   }
 
@@ -56,10 +81,14 @@ export function AuthSessionScript() {
 
   window.addEventListener("pageshow", function (event) {
     migrateToLocal();
-    if (event.persisted) guardProtectedRoute();
+    if (event.persisted) {
+      importAuthFromHash();
+      guardProtectedRoute();
+    }
   });
 
   migrateToLocal();
+  importAuthFromHash();
   guardProtectedRoute();
 })();
 `;

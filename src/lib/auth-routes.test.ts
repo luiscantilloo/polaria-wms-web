@@ -8,6 +8,7 @@ describe("auth-routes", () => {
     expect(isProtectedPath("/dashboard")).toBe(true);
     expect(isProtectedPath("/platform")).toBe(true);
     expect(isProtectedPath("/login")).toBe(false);
+    expect(isProtectedPath("/auth/sso")).toBe(false);
     expect(isProtectedPath("/")).toBe(false);
   });
 });

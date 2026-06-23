@@ -48,6 +48,25 @@ export interface MateoHandoffResponse {
   expiresIn: number;
 }
 
+/** Usuario devuelto por POST /auth/mateo-exchange (SSO Mateo → WMS) */
+export interface MateoExchangeUser {
+  idUsuario: string;
+  username: string;
+  nombre: string;
+  correo: string;
+  nombreRol: string;
+  codigoEmpresa: string | null;
+  codigoCuenta: string | null;
+  scope: AuthScope;
+}
+
+/** Respuesta de POST /auth/mateo-exchange (SSO Mateo → WMS) */
+export interface MateoExchangeResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: MateoExchangeUser;
+}
+
 export interface AuthSession {
   idUsuario: string;
   idAuth: string;

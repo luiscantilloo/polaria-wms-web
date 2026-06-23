@@ -1,6 +1,7 @@
 export const ROUTES = {
   home: "/",
   login: "/login",
+  sso: "/auth/sso",
   /** Dominio configurador (scope platform) */
   configurator: "/configurador",
   /** Alias legacy — redirige a configurador */

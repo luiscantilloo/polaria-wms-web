@@ -4,4 +4,5 @@ export {
   logout,
   mateoHandoff,
   prelogin,
+  wmsSsoExchange,
 } from "./services/auth.service";

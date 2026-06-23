@@ -3,6 +3,7 @@ import type {
   AuthSession,
   LoginRequest,
   LoginResponse,
+  MateoExchangeResponse,
   MateoHandoffResponse,
   PreloginRequest,
   PreloginResponse,
@@ -32,6 +33,15 @@ export async function mateoHandoff(): Promise<MateoHandoffResponse> {
   return apiRequest<MateoHandoffResponse>("/auth/mateo-handoff", {
     method: "POST",
     auth: true,
+  });
+}
+
+export async function wmsSsoExchange(
+  code: string,
+): Promise<MateoExchangeResponse> {
+  return apiRequest<MateoExchangeResponse>("/auth/mateo-exchange", {
+    method: "POST",
+    body: { code },
   });
 }
 

@@ -4,6 +4,7 @@ import {
   login,
   mateoHandoff,
   prelogin,
+  wmsSsoExchange,
 } from "@/modules/auth/services/auth.service";
 
 vi.mock("@/config/env", () => ({
@@ -157,5 +158,48 @@ describe("auth service happy path", () => {
 
     expect(result.code).toBe("handoff-code-123");
     expect(result.expiresIn).toBe(60);
+  });
+
+  it("exchanges mateo SSO code without Bearer token", async () => {
+    const mockExchangeResponse = {
+      accessToken: "sso-access",
+      refreshToken: "sso-refresh",
+      user: {
+        idUsuario: "1",
+        username: "admin.acme",
+        nombre: "Administrador",
+        correo: "admin@acme.com",
+        nombreRol: "Administrador",
+        codigoEmpresa: "ACME",
+        codigoCuenta: null,
+        scope: "tenant" as const,
+      },
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => mockExchangeResponse,
+      }),
+    );
+
+    const result = await wmsSsoExchange("mateo-code-xyz");
+
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/auth/mateo-exchange",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ code: "mateo-code-xyz" }),
+      }),
+    );
+
+    const call = vi.mocked(fetch).mock.calls[0];
+    const headers = call[1]?.headers as Headers;
+    expect(headers.get("Authorization")).toBeNull();
+
+    expect(result.accessToken).toBe("sso-access");
+    expect(result.user.scope).toBe("tenant");
   });
 });
