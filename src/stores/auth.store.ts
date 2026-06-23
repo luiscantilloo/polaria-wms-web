@@ -18,7 +18,7 @@ import type {
   UserPreview,
 } from "@/types/auth";
 
-export { AUTH_STORAGE_KEY };
+export { AUTH_STORAGE_KEY }; 
 
 interface AuthState {
   accessToken: string | null;
