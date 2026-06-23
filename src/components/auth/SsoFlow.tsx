@@ -54,11 +54,14 @@ export function SsoFlow() {
   useEffect(() => {
     if (!code) return;
 
+    const authCode = code.trim();
+    if (!authCode) return;
+
     let cancelled = false;
 
     async function exchange() {
       try {
-        const response = await wmsSsoExchange(code);
+        const response = await wmsSsoExchange(authCode);
         if (cancelled) return;
 
         setTokens(
