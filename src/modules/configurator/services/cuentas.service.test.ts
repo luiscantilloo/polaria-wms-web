@@ -3,7 +3,7 @@ import { ROUTES } from "@/config/routes";
 import { setSupabaseClientForTests } from "@/lib/supabase/domain-query";
 import { createSupabaseMock } from "@/test/create-supabase-mock";
 import { getCreationOptionHref } from "../constants/creation-options";
-import { listCuentasConfigurator } from "./cuentas.service";
+import { createCuentaConfigurator, listCuentasConfigurator } from "./cuentas.service";
 
 describe("creation-options", () => {
   it("cuentas resuelve a /configurador/creacion/cuentas", () => {
@@ -44,5 +44,59 @@ describe("cuentas.service", () => {
         tieneCredenciales: true,
       },
     ]);
+  });
+
+  it("createCuentaConfigurator inserta en cuenta con empresa activa", async () => {
+    let call = 0;
+    const selectChain = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn(),
+    };
+    selectChain.select.mockReturnValue(selectChain);
+    selectChain.eq.mockReturnValue(selectChain);
+    selectChain.order.mockReturnValue(selectChain);
+    selectChain.limit.mockResolvedValue({
+      data: [{ codigo_empresa: "ACME" }],
+      error: null,
+    });
+
+    const insertChain = {
+      insert: vi.fn(),
+    };
+    insertChain.insert.mockResolvedValue({
+      data: { codigo_cuenta: "MIT00" },
+      error: null,
+    });
+
+    const from = vi.fn(() => {
+      call += 1;
+      return call === 1 ? selectChain : insertChain;
+    });
+
+    setSupabaseClientForTests({ from } as never);
+
+    const row = await createCuentaConfigurator({
+      codigoCuenta: "MIT00",
+      nombreComercial: "Mitre",
+      idCreador: "user-1",
+    });
+
+    expect(from).toHaveBeenCalledWith("empresa");
+    expect(from).toHaveBeenCalledWith("cuenta");
+    expect(insertChain.insert).toHaveBeenCalledWith({
+      codigo_cuenta: "MIT00",
+      codigo_empresa: "ACME",
+      nombre_comercial: "Mitre",
+      id_creador: "user-1",
+      esta_activa: true,
+    });
+    expect(row).toEqual({
+      codigoCuenta: "MIT00",
+      nombreComercial: "Mitre",
+      bodegaAsignada: "—",
+      tieneCredenciales: false,
+    });
   });
 });

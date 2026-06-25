@@ -75,6 +75,23 @@ export async function runDomainQuery<T>(
   return (data ?? []) as T;
 }
 
+export async function runDomainMutation<T>(
+  executor: (client: SupabaseClient) => Promise<SupabaseResult<T>>,
+): Promise<T> {
+  const client = getDomainSupabaseClient();
+  const { data, error } = await executor(client);
+
+  if (error) {
+    throw new DomainServiceError(
+      error.message || "Error al guardar en Supabase.",
+      "MUTATION_FAILED",
+      error,
+    );
+  }
+
+  return data as T;
+}
+
 /** Evita inferencia recursiva del query builder de Supabase en build. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DomainSelectQuery = any;

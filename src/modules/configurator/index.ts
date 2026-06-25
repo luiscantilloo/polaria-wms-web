@@ -39,6 +39,7 @@ export { ConfiguratorActionsGrid } from "./components/ConfiguratorActionsGrid";
 export { ConfiguratorBreadcrumb } from "./components/ConfiguratorBreadcrumb";
 export { ConfiguratorHeader } from "./components/ConfiguratorHeader";
 export { ConfiguratorListShell } from "./components/ConfiguratorListShell";
+export { CuentaCreateModal } from "./components/CuentaCreateModal";
 export { CuentasListView } from "./components/CuentasListView";
 export {
   ConfiguratorPanel,
@@ -51,5 +52,8 @@ export {
 export { CreationOptionCard } from "./components/CreationOptionCard";
 export { CreationOptionsGrid } from "./components/CreationOptionsGrid";
 
-export type { CuentaListRow } from "./services/cuentas.service";
-export { listCuentasConfigurator } from "./services/cuentas.service";
+export type { CuentaListRow, CreateCuentaInput } from "./services/cuentas.service";
+export {
+  createCuentaConfigurator,
+  listCuentasConfigurator,
+} from "./services/cuentas.service";

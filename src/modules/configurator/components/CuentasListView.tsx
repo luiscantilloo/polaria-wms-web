@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { PolariaDataTable } from "@/components/shared/PolariaDataTable";
 import {
   PolariaTableBadge,
@@ -16,8 +16,10 @@ import {
 import { listCuentasConfigurator } from "../services/cuentas.service";
 import type { CuentaListRow } from "../services/cuentas.service";
 import { ConfiguratorListShell } from "./ConfiguratorListShell";
+import { CuentaCreateModal } from "./CuentaCreateModal";
 
 export function CuentasListView() {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const fetchCuentas = useCallback(() => listCuentasConfigurator(), []);
   const { data, isLoading, isRefreshing, error, reload } =
     useAsyncQuery(fetchCuentas);
@@ -80,7 +82,15 @@ export function CuentasListView() {
         isRefreshing={isRefreshing}
         primaryAction={{
           label: "Agregar",
-          onClick: () => undefined,
+          onClick: () => setIsCreateOpen(true),
+        }}
+      />
+
+      <CuentaCreateModal
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreated={() => {
+          void reload();
         }}
       />
     </ConfiguratorListShell>

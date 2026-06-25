@@ -2,6 +2,7 @@ export type DomainServiceErrorCode =
   | "SUPABASE_NOT_CONFIGURED"
   | "TENANT_CONTEXT_MISSING"
   | "QUERY_FAILED"
+  | "MUTATION_FAILED"
   | "INVALID_ARGUMENT";
 
 export class DomainServiceError extends Error {
