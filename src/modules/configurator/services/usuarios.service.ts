@@ -29,6 +29,13 @@ export interface CuentaAssignOption {
   nombreComercial: string;
 }
 
+export interface BodegaAssignOption {
+  idBodega: string;
+  nombre: string;
+  codigo: string;
+  codigoCuenta: string;
+}
+
 interface UsuarioRolDbRow {
   id_rol: WmsRol;
   nombre: string;
@@ -41,6 +48,7 @@ interface UsuarioCuentaDbRow {
 interface UsuarioDbRow {
   id_usuario: string;
   username: string;
+  codigo_cuenta: string | null;
   nombre: string;
   id_auth: string;
   rol: UsuarioRolDbRow | UsuarioRolDbRow[] | null;
@@ -52,7 +60,7 @@ interface UsuarioDbRow {
  * Nombrar la relación de la cuenta asignada al usuario.
  */
 const USUARIO_LIST_COLUMNS =
-  "id_usuario,username,nombre,id_auth,rol(id_rol,nombre),cuenta!fk_usuario_cuenta(nombre_comercial)";
+  "id_usuario,username,codigo_cuenta,nombre,id_auth,rol(id_rol,nombre),cuenta!fk_usuario_cuenta(nombre_comercial)";
 
 function resolveRelation<T>(value: T | T[] | null): T | null {
   if (!value) return null;
@@ -65,7 +73,7 @@ function mapUsuarioRow(row: UsuarioDbRow): UsuarioListRow {
 
   return {
     idUsuario: row.id_usuario,
-    codigo: row.username,
+    codigo: row.codigo_cuenta ?? "—",
     rol: rol?.nombre ?? rol?.id_rol ?? "—",
     nombre: row.nombre,
     cuenta: cuenta?.nombre_comercial ?? "—",
@@ -146,11 +154,50 @@ export async function listCuentasAssignOptions(): Promise<CuentaAssignOption[]> 
   }));
 }
 
+/** Bodegas activas para asignación de roles de nivel bodega. */
+export async function listBodegasAssignOptions(): Promise<BodegaAssignOption[]> {
+  const rows = await runDomainQuery<
+    {
+      id_bodega: string;
+      nombre: string;
+      codigo: string;
+      codigo_cuenta: string;
+    }[]
+  >((client) => {
+    const query = client
+      .from("bodega")
+      .select("id_bodega,nombre,codigo,codigo_cuenta")
+      .eq("esta_activa", true)
+      .order("nombre", { ascending: true })
+      .limit(DEFAULT_LIST_LIMIT);
+
+    return query as unknown as Promise<{
+      data:
+        | {
+            id_bodega: string;
+            nombre: string;
+            codigo: string;
+            codigo_cuenta: string;
+          }[]
+        | null;
+      error: { message: string } | null;
+    }>;
+  });
+
+  return rows.map((row) => ({
+    idBodega: row.id_bodega,
+    nombre: row.nombre,
+    codigo: row.codigo,
+    codigoCuenta: row.codigo_cuenta,
+  }));
+}
+
 export interface CreateUsuarioInput {
   codigo: string;
   nombre: string;
   idRol: WmsRol;
   codigoCuenta: string | null;
+  idBodega: string | null;
   correo: string;
   clave: string;
 }
@@ -192,6 +239,7 @@ export async function createUsuarioConfigurator(
   const correo = input.correo.trim();
   const clave = input.clave.trim();
   const codigoCuenta = input.codigoCuenta?.trim() || null;
+  const idBodega = input.idBodega?.trim() || null;
 
   if (!codigo) {
     throw new DomainServiceError("El código es obligatorio.", "INVALID_ARGUMENT");
@@ -232,6 +280,7 @@ export async function createUsuarioConfigurator(
           idRol: input.idRol,
           codigoCuenta,
           codigoEmpresa,
+          idBodega,
           correo,
           password: clave,
         },
@@ -252,7 +301,7 @@ export async function createUsuarioConfigurator(
 
     return {
       idUsuario: created.idUsuario,
-      codigo: created.username,
+      codigo: created.codigoCuenta ?? "—",
       rol: rolNombre,
       nombre: created.nombre,
       cuenta: cuentaNombre,

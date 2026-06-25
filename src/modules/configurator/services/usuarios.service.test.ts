@@ -24,6 +24,7 @@ describe("usuarios.service", () => {
         {
           id_usuario: "usr-1",
           username: "ADMIN01",
+          codigo_cuenta: "MIT00",
           nombre: "Admin Demo",
           id_auth: "auth-1",
           rol: { id_rol: WmsRol.administrador_cuenta, nombre: "Administrador de cuenta" },
@@ -40,13 +41,13 @@ describe("usuarios.service", () => {
 
     expect(from).toHaveBeenCalledWith("usuario");
     expect(selectChain.select).toHaveBeenCalledWith(
-      "id_usuario,username,nombre,id_auth,rol(id_rol,nombre),cuenta!fk_usuario_cuenta(nombre_comercial)",
+      "id_usuario,username,codigo_cuenta,nombre,id_auth,rol(id_rol,nombre),cuenta!fk_usuario_cuenta(nombre_comercial)",
     );
     expect(selectChain.eq).toHaveBeenCalledWith("esta_activo", true);
     expect(rows).toEqual([
       {
         idUsuario: "usr-1",
-        codigo: "ADMIN01",
+        codigo: "MIT00",
         rol: "Administrador de cuenta",
         nombre: "Admin Demo",
         cuenta: "Mitre",

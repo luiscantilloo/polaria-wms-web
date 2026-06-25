@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type { WmsRol } from "@/constants/roles";
 import {
   PolariaFormInput,
@@ -9,6 +9,12 @@ import {
 import { PolariaFormModal } from "@/components/shared/PolariaFormModal";
 import { DomainServiceError } from "@/lib/domain-service-error";
 import { generateCodigoCuentaFromNombre } from "@/lib/generate-codigo-cuenta";
+import {
+  getUsuarioAsignacionLabel,
+  getUsuarioAsignacionTipo,
+  isUsuarioAsignacionFija,
+  USUARIO_ASIGNACION_VALOR_FIJO,
+} from "../constants/usuario-rol-asignacion";
 import {
   createUsuarioConfigurator,
   listCuentasAssignOptions,
@@ -24,7 +30,6 @@ interface UsuarioCreateModalProps {
 }
 
 const INITIAL_FORM = {
-  codigo: "",
   nombre: "",
   idRol: "" as WmsRol | "",
   codigoCuenta: "",
@@ -38,18 +43,23 @@ export function UsuarioCreateModal({
   onCreated,
 }: UsuarioCreateModalProps) {
   const [form, setForm] = useState(INITIAL_FORM);
-  const [codigoManual, setCodigoManual] = useState(false);
   const [roles, setRoles] = useState<RolOption[]>([]);
   const [cuentas, setCuentas] = useState<CuentaAssignOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
+  const asignacionTipo = getUsuarioAsignacionTipo(form.idRol);
+  const asignacionLabel = getUsuarioAsignacionLabel(form.idRol);
+  const codigoCuentaDisplay = useMemo(() => {
+    if (asignacionTipo !== "cuenta") return "";
+    return form.codigoCuenta;
+  }, [asignacionTipo, form.codigoCuenta]);
+
   useEffect(() => {
     if (!open) return;
 
     setForm(INITIAL_FORM);
-    setCodigoManual(false);
     setError(null);
     setIsSubmitting(false);
     setIsLoadingOptions(true);
@@ -72,11 +82,11 @@ export function UsuarioCreateModal({
     onClose();
   }, [isSubmitting, onClose]);
 
-  const handleNombreChange = (value: string) => {
+  const handleRolChange = (idRol: WmsRol | "") => {
     setForm((current) => ({
       ...current,
-      nombre: value,
-      codigo: codigoManual ? current.codigo : generateCodigoCuentaFromNombre(value),
+      idRol,
+      codigoCuenta: "",
     }));
   };
 
@@ -89,14 +99,26 @@ export function UsuarioCreateModal({
       return;
     }
 
+    const username = generateCodigoCuentaFromNombre(form.nombre);
+    if (!username) {
+      setError("El nombre es obligatorio.");
+      return;
+    }
+
+    if (asignacionTipo === "cuenta" && !form.codigoCuenta) {
+      setError("Selecciona la cuenta a asignar.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       await createUsuarioConfigurator({
-        codigo: form.codigo,
+        codigo: username,
         nombre: form.nombre,
         idRol: form.idRol,
-        codigoCuenta: form.codigoCuenta || null,
+        codigoCuenta: asignacionTipo === "cuenta" ? form.codigoCuenta : null,
+        idBodega: null,
         correo: form.correo,
         clave: form.clave,
       });
@@ -114,6 +136,60 @@ export function UsuarioCreateModal({
   };
 
   const disabled = isSubmitting || isLoadingOptions;
+
+  const renderAsignadoField = () => {
+    if (!asignacionTipo) {
+      return (
+        <PolariaFormInput
+          id="usuario-asignado"
+          label="Asignado"
+          value=""
+          placeholder="Selecciona un rol primero"
+          readOnly
+          disabled
+          compact
+        />
+      );
+    }
+
+    if (asignacionTipo === "cuenta") {
+      return (
+        <PolariaFormSelect
+          id="usuario-asignado"
+          label={asignacionLabel}
+          value={form.codigoCuenta}
+          onChange={(event) =>
+            setForm((current) => ({
+              ...current,
+              codigoCuenta: event.target.value,
+            }))
+          }
+          disabled={disabled}
+          placeholder="Selecciona una cuenta"
+          options={cuentas.map((cuenta) => ({
+            value: cuenta.codigoCuenta,
+            label: cuenta.nombreComercial,
+          }))}
+          compact
+        />
+      );
+    }
+
+    if (isUsuarioAsignacionFija(asignacionTipo)) {
+      return (
+        <PolariaFormInput
+          id="usuario-asignado"
+          label={asignacionLabel}
+          value={USUARIO_ASIGNACION_VALOR_FIJO[asignacionTipo] ?? ""}
+          readOnly
+          disabled
+          compact
+        />
+      );
+    }
+
+    return null;
+  };
 
   return (
     <PolariaFormModal
@@ -143,16 +219,14 @@ export function UsuarioCreateModal({
         <PolariaFormInput
           id="usuario-codigo"
           label="Código"
-          value={form.codigo}
-          placeholder="Código del usuario"
-          onChange={(event) => {
-            setCodigoManual(true);
-            setForm((current) => ({
-              ...current,
-              codigo: event.target.value.trim().toUpperCase(),
-            }));
-          }}
-          disabled={disabled}
+          value={codigoCuentaDisplay}
+          placeholder={
+            asignacionTipo === "cuenta"
+              ? "Según la cuenta asignada"
+              : "Se genera al guardar"
+          }
+          readOnly
+          disabled
           compact
         />
 
@@ -161,7 +235,9 @@ export function UsuarioCreateModal({
           label="Nombre"
           value={form.nombre}
           placeholder="Nombre completo"
-          onChange={(event) => handleNombreChange(event.target.value)}
+          onChange={(event) =>
+            setForm((current) => ({ ...current, nombre: event.target.value }))
+          }
           disabled={disabled}
           autoFocus
           compact
@@ -173,10 +249,7 @@ export function UsuarioCreateModal({
           label="Rol"
           value={form.idRol}
           onChange={(event) =>
-            setForm((current) => ({
-              ...current,
-              idRol: event.target.value as WmsRol,
-            }))
+            handleRolChange(event.target.value as WmsRol | "")
           }
           disabled={disabled}
           placeholder="Selecciona un rol"
@@ -187,26 +260,7 @@ export function UsuarioCreateModal({
           compact
         />
 
-        <PolariaFormSelect
-          id="usuario-asignado"
-          label="Asignado"
-          value={form.codigoCuenta}
-          onChange={(event) =>
-            setForm((current) => ({
-              ...current,
-              codigoCuenta: event.target.value,
-            }))
-          }
-          disabled={disabled}
-          options={[
-            { value: "", label: "Sin asignar" },
-            ...cuentas.map((cuenta) => ({
-              value: cuenta.codigoCuenta,
-              label: cuenta.nombreComercial,
-            })),
-          ]}
-          compact
-        />
+        {renderAsignadoField()}
 
         <PolariaFormInput
           id="usuario-correo"

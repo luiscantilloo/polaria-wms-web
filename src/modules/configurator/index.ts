@@ -111,6 +111,7 @@ export {
 } from "./services/bodegas-externas.service";
 
 export type {
+  BodegaAssignOption,
   CreateUsuarioInput,
   CuentaAssignOption,
   RolOption,
@@ -118,6 +119,7 @@ export type {
 } from "./services/usuarios.service";
 export {
   createUsuarioConfigurator,
+  listBodegasAssignOptions,
   listCuentasAssignOptions,
   listRolesConfigurator,
   listUsuariosConfigurator,
