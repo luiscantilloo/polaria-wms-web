@@ -179,6 +179,23 @@ button:disabled,
   color: var(--teal);
 }
 
+/* ── Formularios: selects nativos (contraste en lista desplegable) ─────────── */
+.polaria-form-select {
+  color-scheme: dark;
+}
+
+.polaria-form-select option,
+.polaria-form-select__option {
+  background-color: var(--bg);
+  color: var(--w);
+}
+
+.polaria-form-select option:checked,
+.polaria-form-select__option:checked {
+  background-color: var(--teal);
+  color: var(--bg);
+}
+
 /* ── Topbar ────────────────────────────────────────────────────────────────── */
 .polaria-topbar {
   background: linear-gradient(

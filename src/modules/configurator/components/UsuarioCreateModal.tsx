@@ -121,7 +121,7 @@ export function UsuarioCreateModal({
       onClose={handleClose}
       sectionLabel="Nuevo usuario"
       title="Crear usuario"
-      description="Completa los campos para registrar un usuario."
+      compact
       onSubmit={(event) => {
         void handleSubmit(event);
       }}
@@ -129,103 +129,113 @@ export function UsuarioCreateModal({
       isSubmitting={isSubmitting}
       submitLabel="Crear"
     >
-      <PolariaFormInput
-        id="usuario-id"
-        label="ID único"
-        value=""
-        placeholder="Se genera al guardar"
-        readOnly
-        disabled
-      />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <PolariaFormInput
+          id="usuario-id"
+          label="ID único"
+          value=""
+          placeholder="Se genera al guardar"
+          readOnly
+          disabled
+          compact
+        />
 
-      <PolariaFormInput
-        id="usuario-codigo"
-        label="Código"
-        value={form.codigo}
-        placeholder="Código del usuario"
-        onChange={(event) => {
-          setCodigoManual(true);
-          setForm((current) => ({
-            ...current,
-            codigo: event.target.value.trim().toUpperCase(),
-          }));
-        }}
-        disabled={disabled}
-      />
+        <PolariaFormInput
+          id="usuario-codigo"
+          label="Código"
+          value={form.codigo}
+          placeholder="Código del usuario"
+          onChange={(event) => {
+            setCodigoManual(true);
+            setForm((current) => ({
+              ...current,
+              codigo: event.target.value.trim().toUpperCase(),
+            }));
+          }}
+          disabled={disabled}
+          compact
+        />
 
-      <PolariaFormInput
-        id="usuario-nombre"
-        label="Nombre"
-        value={form.nombre}
-        placeholder="Nombre completo"
-        onChange={(event) => handleNombreChange(event.target.value)}
-        disabled={disabled}
-        autoFocus
-      />
+        <PolariaFormInput
+          id="usuario-nombre"
+          label="Nombre"
+          value={form.nombre}
+          placeholder="Nombre completo"
+          onChange={(event) => handleNombreChange(event.target.value)}
+          disabled={disabled}
+          autoFocus
+          compact
+          fieldClassName="sm:col-span-2"
+        />
 
-      <PolariaFormSelect
-        id="usuario-rol"
-        label="Rol"
-        value={form.idRol}
-        onChange={(event) =>
-          setForm((current) => ({
-            ...current,
-            idRol: event.target.value as WmsRol,
-          }))
-        }
-        disabled={disabled}
-        placeholder="Selecciona un rol"
-        options={roles.map((rol) => ({
-          value: rol.idRol,
-          label: rol.nombre,
-        }))}
-      />
+        <PolariaFormSelect
+          id="usuario-rol"
+          label="Rol"
+          value={form.idRol}
+          onChange={(event) =>
+            setForm((current) => ({
+              ...current,
+              idRol: event.target.value as WmsRol,
+            }))
+          }
+          disabled={disabled}
+          placeholder="Selecciona un rol"
+          options={roles.map((rol) => ({
+            value: rol.idRol,
+            label: rol.nombre,
+          }))}
+          compact
+        />
 
-      <PolariaFormSelect
-        id="usuario-asignado"
-        label="Asignado"
-        value={form.codigoCuenta}
-        onChange={(event) =>
-          setForm((current) => ({
-            ...current,
-            codigoCuenta: event.target.value,
-          }))
-        }
-        disabled={disabled}
-        options={[
-          { value: "", label: "Sin asignar" },
-          ...cuentas.map((cuenta) => ({
-            value: cuenta.codigoCuenta,
-            label: cuenta.nombreComercial,
-          })),
-        ]}
-      />
+        <PolariaFormSelect
+          id="usuario-asignado"
+          label="Asignado"
+          value={form.codigoCuenta}
+          onChange={(event) =>
+            setForm((current) => ({
+              ...current,
+              codigoCuenta: event.target.value,
+            }))
+          }
+          disabled={disabled}
+          options={[
+            { value: "", label: "Sin asignar" },
+            ...cuentas.map((cuenta) => ({
+              value: cuenta.codigoCuenta,
+              label: cuenta.nombreComercial,
+            })),
+          ]}
+          compact
+        />
 
-      <PolariaFormInput
-        id="usuario-correo"
-        label="Correo"
-        type="email"
-        autoComplete="email"
-        value={form.correo}
-        placeholder="correo@empresa.com"
-        onChange={(event) =>
-          setForm((current) => ({ ...current, correo: event.target.value }))
-        }
-        disabled={disabled}
-      />
+        <PolariaFormInput
+          id="usuario-correo"
+          label="Correo"
+          type="email"
+          autoComplete="email"
+          value={form.correo}
+          placeholder="correo@empresa.com"
+          onChange={(event) =>
+            setForm((current) => ({ ...current, correo: event.target.value }))
+          }
+          disabled={disabled}
+          compact
+        />
 
-      <PolariaFormInput
-        id="usuario-clave"
-        label="Clave"
-        type="password"
-        autoComplete="new-password"
-        value={form.clave}
-        placeholder="Contraseña inicial"
-        onChange={(event) =>
-          setForm((current) => ({ ...current, clave: event.target.value }))
-        }
-        disabled={disabled}
-      />
+        <PolariaFormInput
+          id="usuario-clave"
+          label="Clave"
+          type="password"
+          autoComplete="new-password"
+          value={form.clave}
+          placeholder="Contraseña inicial"
+          onChange={(event) =>
+            setForm((current) => ({ ...current, clave: event.target.value }))
+          }
+          disabled={disabled}
+          compact
+        />
+      </div>
     </PolariaFormModal>
   );
 }

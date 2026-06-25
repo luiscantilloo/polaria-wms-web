@@ -18,6 +18,8 @@ export interface PolariaFormModalProps {
   cancelLabel?: string;
   closeLabel?: string;
   className?: string;
+  /** Formularios largos: menos padding, cabecera compacta y scroll interno. */
+  compact?: boolean;
 }
 
 export function PolariaFormModal({
@@ -34,6 +36,7 @@ export function PolariaFormModal({
   cancelLabel = "Cancelar",
   closeLabel = "Cerrar",
   className,
+  compact = false,
 }: PolariaFormModalProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -62,38 +65,57 @@ export function PolariaFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      <button
-        type="button"
-        aria-label="Cerrar modal"
-        className="absolute inset-0 bg-polaria-bg/80 backdrop-blur-sm"
-        onClick={() => {
-          if (!isSubmitting) onClose();
-        }}
-      />
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+        <button
+          type="button"
+          aria-label="Cerrar modal"
+          className="fixed inset-0 bg-polaria-bg/80 backdrop-blur-sm"
+          onClick={() => {
+            if (!isSubmitting) onClose();
+          }}
+        />
 
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={description ? descriptionId : undefined}
-        className={cn(
-          "polaria-card-glow relative z-10 w-full max-w-lg rounded-2xl border border-polaria-t-20 bg-polaria-t-08 p-6 backdrop-blur-xl sm:p-8",
-          className,
-        )}
-      >
-        <div className="mb-6 flex items-start justify-between gap-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={description ? descriptionId : undefined}
+          className={cn(
+            "polaria-card-glow relative z-10 flex w-full max-h-[min(90dvh,calc(100vh-2rem))] flex-col rounded-2xl border border-polaria-t-20 bg-polaria-t-08 backdrop-blur-xl",
+            compact ? "max-w-md p-4 sm:p-5" : "max-w-lg p-6 sm:p-8",
+            className,
+          )}
+        >
+          <div
+            className={cn(
+              "flex shrink-0 items-start justify-between gap-4",
+              compact ? "mb-4" : "mb-6",
+            )}
+          >
           <div>
             {sectionLabel ? (
               <p className="polaria-text-label text-polaria-teal">
                 {sectionLabel}
               </p>
             ) : null}
-            <h2 id={titleId} className="polaria-text-card-title mt-1">
+            <h2
+              id={titleId}
+              className={cn(
+                "polaria-text-card-title mt-1",
+                compact && "text-lg sm:text-xl",
+              )}
+            >
               {title}
             </h2>
             {description ? (
-              <p id={descriptionId} className="polaria-text-subtitle mt-2">
+              <p
+                id={descriptionId}
+                className={cn(
+                  "polaria-text-subtitle",
+                  compact ? "mt-1 text-sm" : "mt-2",
+                )}
+              >
                 {description}
               </p>
             ) : null}
@@ -112,9 +134,15 @@ export function PolariaFormModal({
           >
             {closeLabel}
           </button>
-        </div>
+          </div>
 
-        <form onSubmit={onSubmit} className="flex flex-col gap-5">
+          <form
+            onSubmit={onSubmit}
+            className={cn(
+              "flex min-h-0 flex-1 flex-col overflow-y-auto",
+              compact ? "gap-3" : "gap-5",
+            )}
+          >
           {children}
 
           {error ? (
@@ -126,7 +154,12 @@ export function PolariaFormModal({
             </p>
           ) : null}
 
-          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+          <div
+            className={cn(
+              "flex shrink-0 flex-wrap items-center justify-end gap-3",
+              compact ? "pt-1" : "pt-2",
+            )}
+          >
             <button
               type="button"
               onClick={onClose}
@@ -157,7 +190,8 @@ export function PolariaFormModal({
               {submitLabel}
             </button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
