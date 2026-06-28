@@ -137,6 +137,7 @@ export async function createUsuarioAdmin(
           nombre,
           correo,
           password: clave,
+          idRol: WmsRol.operador_cuenta,
         },
       },
     );
