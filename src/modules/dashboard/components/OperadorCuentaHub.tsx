@@ -24,7 +24,7 @@ export function OperadorCuentaHub() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="text-center">
         <h1 className="polaria-text-display">Operación de cuenta</h1>
         <p className="polaria-text-subtitle mt-2 text-polaria-w-50">
@@ -34,7 +34,7 @@ export function OperadorCuentaHub() {
 
       <section
         aria-label="Accesos operador de cuenta"
-        className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 px-4 sm:grid-cols-2 sm:gap-5 sm:px-6"
+        className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6"
       >
         {OPERADOR_CUENTA_HUB_OPTIONS.map((option) => (
           <PolariaSelectionCard
@@ -50,6 +50,6 @@ export function OperadorCuentaHub() {
           />
         ))}
       </section>
-    </div>
+    </main>
   );
 }

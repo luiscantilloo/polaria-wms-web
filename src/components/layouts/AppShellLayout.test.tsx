@@ -57,6 +57,7 @@ vi.mock("@/config/env", () => ({
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn() }),
+  usePathname: () => "/dashboard",
 }));
 
 vi.mock("next/image", () => ({

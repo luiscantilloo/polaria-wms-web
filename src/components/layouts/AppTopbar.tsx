@@ -70,7 +70,6 @@ export function AppTopbar({
                 {dateLabel}
               </time>
             </div>
-
           </div>
 
           <div className="polaria-topbar__center">

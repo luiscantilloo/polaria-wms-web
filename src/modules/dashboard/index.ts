@@ -21,6 +21,7 @@ export {
   type OperadorCuentaHubOption,
   type OperadorCuentaHubOptionId,
 } from "./constants/operador-cuenta-hub";
+export { OperadorCuentaBreadcrumb } from "./components/OperadorCuentaBreadcrumb";
 export { DashboardHome } from "./components/DashboardHome";
 export { DashboardPageContent } from "./components/DashboardPageContent";
 export { OperadorCuentaHub } from "./components/OperadorCuentaHub";

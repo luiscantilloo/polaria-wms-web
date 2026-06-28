@@ -146,11 +146,11 @@ function createRealtimeMock() {
 }
 
 import DashboardIngresoPage from "@/app/(shell)/dashboard/ingreso/page";
-import DashboardComprasPage from "@/app/(shell)/dashboard/compras/page";
-import DashboardIntegracionCuentaPage from "@/app/(shell)/dashboard/integracion-cuenta/page";
+import DashboardComprasPage from "@/app/(shell)/dashboard/(operacion-cuenta)/compras/page";
+import DashboardIntegracionCuentaPage from "@/app/(shell)/dashboard/(operacion-cuenta)/integracion-cuenta/page";
 import DashboardMapaPage from "@/app/(shell)/dashboard/mapa/page";
-import DashboardProcesamientoPage from "@/app/(shell)/dashboard/procesamiento/page";
-import DashboardVentasPage from "@/app/(shell)/dashboard/ventas/page";
+import DashboardProcesamientoPage from "@/app/(shell)/dashboard/(operacion-cuenta)/procesamiento/page";
+import DashboardVentasPage from "@/app/(shell)/dashboard/(operacion-cuenta)/ventas/page";
 import DashboardTransportePage from "@/app/(shell)/dashboard/transporte/page";
 import DashboardReporteriaPage from "@/app/(shell)/dashboard/reporteria/page";
 
