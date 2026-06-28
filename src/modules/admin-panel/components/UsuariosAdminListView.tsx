@@ -2,10 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { PolariaDataTable } from "@/components/shared/PolariaDataTable";
-import {
-  PolariaTableCode,
-  PolariaTableEditButton,
-} from "@/components/shared/PolariaTableCells";
+import { PolariaTableCode } from "@/components/shared/PolariaTableCells";
 import { useAsyncQuery } from "@/hooks/useAsyncQuery";
 import { useCompany } from "@/providers/CompanyProvider";
 import {
@@ -68,11 +65,6 @@ export function UsuariosAdminListView() {
           header: "Alta",
           cell: (row: UsuarioAdminListRow) =>
             formatUsuarioAdminCreatedAt(row.createdAt),
-        },
-        {
-          id: "acciones",
-          header: "Acciones",
-          cell: () => <PolariaTableEditButton />,
         },
       ] as const,
     [],

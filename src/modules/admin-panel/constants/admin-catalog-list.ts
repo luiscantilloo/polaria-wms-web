@@ -8,7 +8,7 @@ export const PROVEEDORES_PAGE_HINT =
 export const PROVEEDORES_TABLE_TITLE = "Proveedores" as const;
 
 export const PROVEEDORES_TABLE_SUBTITLE =
-  "ID, código, contacto y acciones." as const;
+  "ID, código y contacto." as const;
 
 export const PROVEEDORES_EMPTY_MESSAGE =
   "No hay proveedores registrados." as const;
@@ -21,7 +21,7 @@ export const CLIENTES_PAGE_HINT =
 export const CLIENTES_TABLE_TITLE = "Clientes" as const;
 
 export const CLIENTES_TABLE_SUBTITLE =
-  "ID, código, nombre, NIT y acciones." as const;
+  "ID, código, nombre y NIT." as const;
 
 export const CLIENTES_EMPTY_MESSAGE =
   "No hay clientes registrados." as const;
@@ -34,7 +34,7 @@ export const COMPRADORES_PAGE_HINT =
 export const COMPRADORES_TABLE_TITLE = "Compradores" as const;
 
 export const COMPRADORES_TABLE_SUBTITLE =
-  "Código, comprador y acciones." as const;
+  "Código y comprador." as const;
 
 export const COMPRADORES_EMPTY_MESSAGE =
   "No hay compradores registrados." as const;
@@ -98,6 +98,9 @@ export const CATALOGO_TABLE_SUBTITLE =
 
 export const CATALOGO_EMPTY_MESSAGE =
   "No hay productos en el catálogo." as const;
+
+export const CATALOGO_IMPORT_EXCEL_TOOLTIP =
+  "Disponible en iteración próxima" as const;
 
 export const REPORTES_PAGE_TITLE = "Reportes" as const;
 

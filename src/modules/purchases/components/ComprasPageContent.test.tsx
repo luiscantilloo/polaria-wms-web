@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DomainServiceError } from "@/lib/domain-service-error";
 import type { OrdenCompraRow } from "../types/purchases.types";
 import { ComprasPageContent } from "./ComprasPageContent";
 
@@ -97,5 +98,32 @@ describe("ComprasPageContent", () => {
       await screen.findByRole("status"),
     ).toHaveTextContent("Proveedor notificado");
     expect(screen.getByText("Notificado")).toBeInTheDocument();
+  });
+
+  it("muestra error claro si la integración n8n no está configurada", async () => {
+    const user = userEvent.setup();
+
+    notifyProveedorPedido.mockRejectedValue(
+      new DomainServiceError(
+        "Integración de pedido a proveedor no configurada.",
+        "MUTATION_FAILED",
+      ),
+    );
+
+    render(<ComprasPageContent />);
+
+    await user.click(screen.getByRole("button", { name: "Órdenes" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("OC-001")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Notificar proveedor" }));
+
+    expect(
+      await screen.findByRole("alert"),
+    ).toHaveTextContent("Integración de pedido a proveedor no configurada.");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByText("Notificado")).not.toBeInTheDocument();
   });
 });

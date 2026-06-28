@@ -43,6 +43,35 @@ describe("PolariaDataTable", () => {
     expect(screen.getByText("Mitre")).toBeInTheDocument();
   });
 
+  it("deshabilita acciones adicionales con tooltip", () => {
+    render(
+      <PolariaDataTable<Row>
+        title="Catálogo"
+        isLoading={false}
+        error={null}
+        rows={[]}
+        columns={columns}
+        getRowKey={(row) => row.id}
+        emptyMessage="Sin registros"
+        additionalActions={[
+          {
+            label: "Importar Excel",
+            disabled: true,
+            title: "Disponible en iteración próxima",
+            variant: "outline",
+          },
+        ]}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "Importar Excel" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute(
+      "title",
+      "Disponible en iteración próxima",
+    );
+  });
+
   it("muestra estado vacío", () => {
     render(
       <PolariaDataTable<Row>

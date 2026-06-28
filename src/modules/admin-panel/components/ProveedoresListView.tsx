@@ -2,10 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { PolariaDataTable } from "@/components/shared/PolariaDataTable";
-import {
-  PolariaTableCode,
-  PolariaTableEditButton,
-} from "@/components/shared/PolariaTableCells";
+import { PolariaTableCode } from "@/components/shared/PolariaTableCells";
 import { formatInternationalPhoneDisplay } from "@/constants/phone-countries";
 import { useAsyncQuery } from "@/hooks/useAsyncQuery";
 import { useCompany } from "@/providers/CompanyProvider";
@@ -83,11 +80,6 @@ export function ProveedoresListView() {
           id: "email",
           header: "Email",
           cell: (row: ProveedorListRow) => row.email ?? "—",
-        },
-        {
-          id: "acciones",
-          header: "Acciones",
-          cell: () => <PolariaTableEditButton />,
         },
       ] as const,
     [],

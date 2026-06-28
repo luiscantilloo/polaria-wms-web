@@ -1,7 +1,17 @@
 "use client";
 
+import { useCallback, useMemo } from "react";
 import { AlertCircle, Box } from "lucide-react";
+import { ModuleListPage } from "@/components/shared/ModuleListPage";
+import { PolariaTableBadge } from "@/components/shared/PolariaTableCells";
+import { formatDateTime } from "@/components/shared/formatters";
+import { useAsyncQuery } from "@/hooks/useAsyncQuery";
 import { cn } from "@/lib/cn";
+import {
+  formatEstadoIntegracion,
+  formatTipoIntegracion,
+  isSolicitudIntegracionPendiente,
+} from "@/modules/account-integration/constants/integration-types";
 import {
   INTEGRACION_EMPTY_HINT,
   INTEGRACION_EMPTY_MESSAGE,
@@ -9,9 +19,69 @@ import {
   INTEGRACION_PAGE_TITLE,
   INTEGRACION_PANEL_TITLE,
 } from "../constants/integration";
+import {
+  listSolicitudesIntegracionConfigurator,
+  type ConfiguratorSolicitudIntegracionRow,
+} from "../services/integracion.service";
+
+function renderEstadoBadge(estado: string) {
+  const normalized = estado.toLowerCase();
+  const variant = normalized === "activo" ? "positive" : "neutral";
+
+  return (
+    <PolariaTableBadge variant={variant}>
+      {formatEstadoIntegracion(estado)}
+    </PolariaTableBadge>
+  );
+}
 
 export function IntegracionView() {
-  const solicitudesCount = 0;
+  const fetchSolicitudes = useCallback(
+    () => listSolicitudesIntegracionConfigurator(),
+    [],
+  );
+  const { data, isLoading, error } = useAsyncQuery(fetchSolicitudes);
+
+  const rows = data ?? [];
+  const solicitudesCount = rows.length;
+  const pendientesCount = rows.filter((row) =>
+    isSolicitudIntegracionPendiente(row.estado),
+  ).length;
+
+  const columns = useMemo(
+    () =>
+      [
+        {
+          id: "cuenta",
+          header: "Cuenta",
+          cell: (row: ConfiguratorSolicitudIntegracionRow) => row.cuentaNombre,
+        },
+        {
+          id: "bodega",
+          header: "Bodega externa",
+          cell: (row: ConfiguratorSolicitudIntegracionRow) => row.bodegaNombre,
+        },
+        {
+          id: "tipo",
+          header: "Tipo de integración",
+          cell: (row: ConfiguratorSolicitudIntegracionRow) =>
+            formatTipoIntegracion(row.tipoIntegracion),
+        },
+        {
+          id: "fecha",
+          header: "Fecha",
+          cell: (row: ConfiguratorSolicitudIntegracionRow) =>
+            formatDateTime(row.createdAt),
+        },
+        {
+          id: "estado",
+          header: "Estado",
+          cell: (row: ConfiguratorSolicitudIntegracionRow) =>
+            renderEstadoBadge(row.estado),
+        },
+      ] as const,
+    [],
+  );
 
   return (
     <main className="flex flex-1 flex-col justify-start gap-8 pt-8 pb-10 sm:gap-10 sm:pt-12 sm:pb-14 lg:gap-12 lg:pt-16 lg:pb-20">
@@ -42,49 +112,76 @@ export function IntegracionView() {
               {INTEGRACION_PANEL_TITLE}
             </span>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border",
-                  "border-polaria-warning-border bg-polaria-warning-bg px-3 py-1",
-                  "polaria-text-badge text-polaria-warning",
-                )}
-              >
-                <AlertCircle
-                  className="h-3.5 w-3.5 shrink-0"
-                  strokeWidth={2}
-                  aria-hidden
-                />
-                Pendiente
-              </span>
-              <span
-                className={cn(
-                  "inline-flex rounded-full border border-polaria-t-20 bg-polaria-t-08",
-                  "px-3 py-1 polaria-text-badge text-polaria-teal",
-                )}
-              >
-                {solicitudesCount} solicitudes
-              </span>
-            </div>
+            {!isLoading && !error ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {pendientesCount > 0 ? (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border",
+                      "border-polaria-warning-border bg-polaria-warning-bg px-3 py-1",
+                      "polaria-text-badge text-polaria-warning",
+                    )}
+                  >
+                    <AlertCircle
+                      className="h-3.5 w-3.5 shrink-0"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                    {pendientesCount} pendiente
+                    {pendientesCount === 1 ? "" : "s"}
+                  </span>
+                ) : null}
+                <span
+                  className={cn(
+                    "inline-flex rounded-full border border-polaria-t-20 bg-polaria-t-08",
+                    "px-3 py-1 polaria-text-badge text-polaria-teal",
+                  )}
+                >
+                  {solicitudesCount} solicitud
+                  {solicitudesCount === 1 ? "" : "es"}
+                </span>
+              </div>
+            ) : null}
           </header>
 
-          <div className="flex flex-col items-center justify-center px-6 py-16 text-center sm:py-20">
-            <div
-              className={cn(
-                "mb-5 flex h-12 w-12 items-center justify-center rounded-xl",
-                "border border-polaria-t-20 bg-polaria-bg",
-              )}
-              aria-hidden
-            >
-              <Box className="h-5 w-5 text-polaria-w-50" strokeWidth={1.75} />
+          {isLoading ? (
+            <p className="px-6 py-16 text-center polaria-text-body-sm text-polaria-w-50 sm:py-20">
+              Cargando solicitudes…
+            </p>
+          ) : error ? (
+            <p className="px-6 py-16 text-center polaria-text-body-sm text-polaria-warning sm:py-20">
+              {error}
+            </p>
+          ) : solicitudesCount === 0 ? (
+            <div className="flex flex-col items-center justify-center px-6 py-16 text-center sm:py-20">
+              <div
+                className={cn(
+                  "mb-5 flex h-12 w-12 items-center justify-center rounded-xl",
+                  "border border-polaria-t-20 bg-polaria-bg",
+                )}
+                aria-hidden
+              >
+                <Box className="h-5 w-5 text-polaria-w-50" strokeWidth={1.75} />
+              </div>
+              <p className="polaria-text-card-title text-polaria-w">
+                {INTEGRACION_EMPTY_MESSAGE}
+              </p>
+              <p className="polaria-text-body-sm mt-2 max-w-sm text-polaria-w-50">
+                {INTEGRACION_EMPTY_HINT}
+              </p>
             </div>
-            <p className="polaria-text-card-title text-polaria-w">
-              {INTEGRACION_EMPTY_MESSAGE}
-            </p>
-            <p className="polaria-text-body-sm mt-2 max-w-sm text-polaria-w-50">
-              {INTEGRACION_EMPTY_HINT}
-            </p>
-          </div>
+          ) : (
+            <div className="px-5 py-4 sm:px-6">
+              <ModuleListPage
+                isLoading={false}
+                error={null}
+                rows={rows}
+                columns={columns}
+                emptyMessage={INTEGRACION_EMPTY_MESSAGE}
+                getRowKey={(row) => row.idSolicitudIntegracion}
+              />
+            </div>
+          )}
         </section>
       </div>
     </main>

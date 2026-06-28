@@ -29,8 +29,10 @@ export interface PolariaDataTableProps<T> {
   };
   additionalActions?: readonly {
     label: string;
-    onClick: () => void;
+    onClick?: () => void;
     variant?: "primary" | "outline";
+    disabled?: boolean;
+    title?: string;
   }[];
   search?: {
     value: string;
@@ -120,12 +122,16 @@ export function PolariaDataTable<T>({
               key={action.label}
               type="button"
               onClick={action.onClick}
+              disabled={action.disabled}
+              title={action.title}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-xl px-4 py-2 polaria-text-body-sm font-semibold transition",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-polaria-teal focus-visible:ring-offset-2 focus-visible:ring-offset-polaria-bg",
-                action.variant === "primary"
-                  ? "bg-polaria-teal text-polaria-bg hover:opacity-90"
-                  : "border border-polaria-t-20 text-polaria-teal hover:bg-polaria-t-08",
+                action.disabled
+                  ? "cursor-not-allowed border border-polaria-w-08 text-polaria-w-20 opacity-60"
+                  : action.variant === "primary"
+                    ? "bg-polaria-teal text-polaria-bg hover:opacity-90"
+                    : "border border-polaria-t-20 text-polaria-teal hover:bg-polaria-t-08",
               )}
             >
               {action.label}

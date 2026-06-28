@@ -25,3 +25,7 @@ export function formatTipoIntegracion(tipo: string | null | undefined): string {
 export function formatEstadoIntegracion(estado: string): string {
   return ESTADO_INTEGRACION_LABELS[estado] ?? estado;
 }
+
+export function isSolicitudIntegracionPendiente(estado: string): boolean {
+  return estado.toLowerCase() !== "finalizado";
+}

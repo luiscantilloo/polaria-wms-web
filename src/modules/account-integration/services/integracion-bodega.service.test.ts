@@ -2,6 +2,7 @@ import { describe, expect, it, afterEach, vi } from "vitest";
 import {
   formatEstadoIntegracion,
   formatTipoIntegracion,
+  isSolicitudIntegracionPendiente,
 } from "../constants/integration-types";
 import {
   createSolicitudIntegracion,
@@ -133,5 +134,10 @@ describe("integration-types", () => {
   it("formatea tipo y estado", () => {
     expect(formatTipoIntegracion("csv_plano")).toBe("CSV plano");
     expect(formatEstadoIntegracion("activo")).toBe("Activa");
+  });
+
+  it("detecta solicitudes pendientes", () => {
+    expect(isSolicitudIntegracionPendiente("activo")).toBe(true);
+    expect(isSolicitudIntegracionPendiente("finalizado")).toBe(false);
   });
 });
