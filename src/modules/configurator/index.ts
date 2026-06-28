@@ -72,7 +72,6 @@ export { BodegaExternaListView } from "./components/BodegaExternaListView";
 export { BodegaInternaCreateModal } from "./components/BodegaInternaCreateModal";
 export { BodegaInternaListView } from "./components/BodegaInternaListView";
 export { IntegracionView } from "./components/IntegracionView";
-export { OnboardingWizard } from "./components/OnboardingWizard";
 export { ConfiguratorBreadcrumb } from "./components/ConfiguratorBreadcrumb";
 export { ConfiguratorHeader } from "./components/ConfiguratorHeader";
 export { ConfiguratorListShell } from "./components/ConfiguratorListShell";

@@ -23,13 +23,6 @@ function getBreadcrumbTrail(pathname: string): BreadcrumbItem[] | null {
     ];
   }
 
-  if (pathname === ROUTES.configuratorOnboarding) {
-    return [
-      { label: "Inicio", href: ROUTES.configurator },
-      { label: "Onboarding nuevo tenant" },
-    ];
-  }
-
   if (pathname === ROUTES.configuratorCreationAccounts) {
     return [
       { label: "Inicio", href: ROUTES.configurator },
