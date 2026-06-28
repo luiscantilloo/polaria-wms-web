@@ -2,10 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { PolariaDataTable } from "@/components/shared/PolariaDataTable";
-import {
-  PolariaTableCode,
-  PolariaTableEditButton,
-} from "@/components/shared/PolariaTableCells";
+import { PolariaTableCode } from "@/components/shared/PolariaTableCells";
 import { useAsyncQuery } from "@/hooks/useAsyncQuery";
 import { useCompany } from "@/providers/CompanyProvider";
 import {
@@ -81,11 +78,6 @@ export function PlantasListView() {
           id: "rango-temp",
           header: "Rango Temp",
           cell: (row: PlantaListRow) => row.rangoTemperatura ?? "—",
-        },
-        {
-          id: "acciones",
-          header: "Acciones",
-          cell: () => <PolariaTableEditButton />,
         },
       ] as const,
     [],

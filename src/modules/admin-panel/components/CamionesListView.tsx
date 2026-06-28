@@ -5,7 +5,6 @@ import { PolariaDataTable } from "@/components/shared/PolariaDataTable";
 import {
   PolariaTableBadge,
   PolariaTableCode,
-  PolariaTableEditButton,
 } from "@/components/shared/PolariaTableCells";
 import { useAsyncQuery } from "@/hooks/useAsyncQuery";
 import { useCompany } from "@/providers/CompanyProvider";
@@ -121,11 +120,6 @@ export function CamionesListView() {
           id: "creado",
           header: "Creado",
           cell: (row: CamionListRow) => formatCamionCreatedAt(row.createdAt),
-        },
-        {
-          id: "acciones",
-          header: "Acciones",
-          cell: () => <PolariaTableEditButton />,
         },
       ] as const,
     [],

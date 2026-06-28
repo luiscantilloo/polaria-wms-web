@@ -2,10 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { PolariaDataTable } from "@/components/shared/PolariaDataTable";
-import {
-  PolariaTableCode,
-  PolariaTableEditButton,
-} from "@/components/shared/PolariaTableCells";
+import { PolariaTableCode } from "@/components/shared/PolariaTableCells";
 import { useAsyncQuery } from "@/hooks/useAsyncQuery";
 import { useCompany } from "@/providers/CompanyProvider";
 import {
@@ -56,11 +53,6 @@ export function CompradoresListView() {
           id: "comprador",
           header: "Comprador",
           cell: (row: CompradorListRow) => row.comprador,
-        },
-        {
-          id: "acciones",
-          header: "Acciones",
-          cell: () => <PolariaTableEditButton />,
         },
       ] as const,
     [],

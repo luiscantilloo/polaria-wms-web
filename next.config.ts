@@ -13,18 +13,24 @@ const apiBaseUrl = normalizeApiBaseUrl(
     "https://polaria-wms-api.onrender.com",
 );
 
+/** Excluye el route handler local de n8n; el resto de /api/* se proxya a Nest. */
+export const NEST_API_REWRITE_SOURCE =
+  "/api/:path((?!pedido-proveedor$).*)";
+
 const nextConfig: NextConfig = {
   // Evita que Turbopack use C:\Users\Daniel\Videos como root (hay package-lock.json padre).
   turbopack: {
     root: projectRoot,
   },
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiBaseUrl}/:path*`,
-      },
-    ];
+    return {
+      afterFiles: [
+        {
+          source: NEST_API_REWRITE_SOURCE,
+          destination: `${apiBaseUrl}/:path*`,
+        },
+      ],
+    };
   },
   async redirects() {
     return [

@@ -67,4 +67,28 @@ describe("pedido-proveedor-client.service", () => {
     });
     expect(result.correlationId).toBe("corr-1");
   });
+
+  it("propaga error claro cuando la integración no está configurada (503)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => ({
+          ok: false,
+          error: "Integración de pedido a proveedor no configurada.",
+        }),
+      }),
+    );
+
+    await expect(
+      notifyProveedorPedido({
+        idOrdenCompra: "oc-1",
+        idProveedor: "prov-1",
+        lineas: [{ sku: "SKU-001", cantidad: 5, unidad: "kg" }],
+      }),
+    ).rejects.toMatchObject({
+      message: "Integración de pedido a proveedor no configurada.",
+    });
+  });
 });

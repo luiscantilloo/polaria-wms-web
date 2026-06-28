@@ -16,7 +16,9 @@ import type {
 const SOLICITUD_INTEGRACION_COLUMNS =
   "id_solicitud_integracion,codigo_cuenta,id_cliente,bodega_externa_id,bodega_externa_nombre,scraping,api,csv_plano,estado,created_at,id_solicitante";
 
-interface SolicitudIntegracionDbRow {
+export const SOLICITUD_INTEGRACION_SELECT_COLUMNS = SOLICITUD_INTEGRACION_COLUMNS;
+
+export interface SolicitudIntegracionDbRow {
   id_solicitud_integracion: string;
   codigo_cuenta: string;
   id_cliente: string;
@@ -48,7 +50,7 @@ function mapTipoIntegracionToFlags(tipoIntegracion: TipoIntegracion) {
   };
 }
 
-function mapSolicitudIntegracionRow(
+export function mapSolicitudIntegracionRow(
   row: SolicitudIntegracionDbRow,
 ): SolicitudIntegracionRow {
   return {
