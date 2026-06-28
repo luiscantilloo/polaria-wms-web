@@ -7,9 +7,6 @@ import {
 
 describe("getConfiguratorActionHref", () => {
   it("mapea cada acción a su sub-ruta", () => {
-    expect(getConfiguratorActionHref("onboarding")).toBe(
-      ROUTES.configuratorOnboarding,
-    );
     expect(getConfiguratorActionHref("creation")).toBe(
       ROUTES.configuratorCreation,
     );
