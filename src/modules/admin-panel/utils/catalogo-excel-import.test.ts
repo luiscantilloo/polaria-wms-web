@@ -61,6 +61,20 @@ describe("catalogo-excel-import", () => {
     expect(result.rows[0]?.titulo).toBe("Filete premium");
   });
 
+  it("acepta costPerItem como fallback de precio", async () => {
+    const file = csvFile(
+      [
+        "title,description,provider,category,productType,status,costPerItem",
+        "Bolsa 200g,Bolsa congelada,Proveedor B,Congelados,Primario,active,4500",
+      ].join("\n"),
+    );
+
+    const result = await parseCatalogoSpreadsheetFile(file);
+
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0]?.metadatos.precio).toBe("4500");
+  });
+
   it("exige vinculado para secundario sin SKU primario", async () => {
     const file = csvFile(
       [

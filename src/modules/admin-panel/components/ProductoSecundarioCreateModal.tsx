@@ -10,6 +10,7 @@ import { DomainServiceError } from "@/lib/domain-service-error";
 import { generateCodigoCuentaFromNombre } from "@/lib/generate-codigo-cuenta";
 import { useCompany } from "@/providers/CompanyProvider";
 import {
+  CATALOGO_ESTADO_DEFAULT,
   CATALOGO_TIPO_SECUNDARIO,
   CATALOGO_UNIDAD_VISUALIZACION_OPTIONS,
   createEmptyCatalogoMetadatos,
@@ -105,6 +106,22 @@ export function ProductoSecundarioCreateModal({
     }
     if (!form.descripcion?.trim()) {
       setError("La descripción es obligatoria.");
+      return;
+    }
+    if (!form.proveedor?.trim()) {
+      setError("El proveedor es obligatorio.");
+      return;
+    }
+    if (!form.categoria?.trim()) {
+      setError("La categoría es obligatoria.");
+      return;
+    }
+    if (!form.estado?.trim()) {
+      setError("El estado es obligatorio.");
+      return;
+    }
+    if (!form.precio?.trim()) {
+      setError("El precio es obligatorio.");
       return;
     }
     if (!form.idProductoPrimario) {
@@ -212,6 +229,33 @@ export function ProductoSecundarioCreateModal({
           value={form.descripcion ?? ""}
           onChange={(event) => patch({ descripcion: event.target.value })}
           disabled={disabled}
+        />
+
+        <PolariaFormInput
+          id="secundario-proveedor"
+          label="Proveedor *"
+          value={form.proveedor ?? ""}
+          onChange={(event) => patch({ proveedor: event.target.value })}
+          disabled={disabled}
+          compact
+        />
+
+        <PolariaFormInput
+          id="secundario-categoria"
+          label="Categoría producto *"
+          value={form.categoria ?? ""}
+          onChange={(event) => patch({ categoria: event.target.value })}
+          disabled={disabled}
+          compact
+        />
+
+        <PolariaFormInput
+          id="secundario-estado"
+          label="Estado *"
+          value={form.estado ?? CATALOGO_ESTADO_DEFAULT}
+          onChange={(event) => patch({ estado: event.target.value })}
+          disabled={disabled}
+          compact
         />
 
         <PolariaFormInput
