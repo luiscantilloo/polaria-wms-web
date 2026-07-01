@@ -13,9 +13,14 @@ import {
   listBodegasInternasVinculadasAdmin,
   listCatalogoProductosAdmin,
   listProveedoresAdmin,
+  type ProveedorListRow,
 } from "@/modules/admin-panel";
 import { useCompany } from "@/providers/CompanyProvider";
 import { createSolicitudCompraApi } from "../services/purchases-api.service";
+import {
+  buildSolicitudCompraN8nBody,
+  notifySolicitudCompraN8n,
+} from "../services/solicitud-compra-n8n-client.service";
 
 interface SolicitudCompraCreateModalProps {
   open: boolean;
@@ -36,11 +41,6 @@ interface ProductoOption {
   sku?: string;
 }
 
-interface ProveedorOption {
-  value: string;
-  label: string;
-}
-
 export function SolicitudCompraCreateModal({
   open,
   onClose,
@@ -52,7 +52,7 @@ export function SolicitudCompraCreateModal({
   const [pickPesoKg, setPickPesoKg] = useState("");
   const [idProveedor, setIdProveedor] = useState("");
   const [productos, setProductos] = useState<ProductoOption[]>([]);
-  const [proveedores, setProveedores] = useState<ProveedorOption[]>([]);
+  const [proveedores, setProveedores] = useState<ProveedorListRow[]>([]);
   const [resolvedBodegaId, setResolvedBodegaId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,14 +93,7 @@ export function SolicitudCompraCreateModal({
           })),
         );
 
-        setProveedores(
-          proveedorRows.map((row) => ({
-            value: row.idProveedor,
-            label: row.nombre
-              ? `${row.proveedor} — ${row.nombre}`
-              : row.proveedor,
-          })),
-        );
+        setProveedores(proveedorRows);
 
         if (!activeBodegaId && bodegaRows?.length) {
           setResolvedBodegaId(bodegaRows[0]?.idBodega ?? null);
@@ -182,7 +175,7 @@ export function SolicitudCompraCreateModal({
     setIsSubmitting(true);
 
     try {
-      await createSolicitudCompraApi({
+      const created = await createSolicitudCompraApi({
         codigoCuenta,
         idBodega: resolvedBodegaId,
         idProveedor,
@@ -191,6 +184,31 @@ export function SolicitudCompraCreateModal({
           cantidad: linea.pesoKg,
         })),
       });
+
+      const proveedor =
+        proveedores.find((row) => row.idProveedor === created.idProveedor) ??
+        proveedores.find((row) => row.idProveedor === idProveedor);
+
+      if (proveedor?.telefono) {
+        try {
+          await notifySolicitudCompraN8n(
+            buildSolicitudCompraN8nBody({
+              codigoCuenta,
+              solicitud: created,
+              proveedor,
+              lineas: lines.map((linea) => ({
+                idProducto: linea.idProducto,
+                sku: linea.skuSnapshot,
+                descripcion: linea.titleSnapshot,
+                cantidad: linea.pesoKg,
+              })),
+            }),
+          );
+        } catch {
+          // La solicitud ya quedó guardada; la notificación a n8n es best-effort.
+        }
+      }
+
       onCreated();
       onClose();
     } catch (err: unknown) {
@@ -233,7 +251,12 @@ export function SolicitudCompraCreateModal({
         onChange={(event) => setIdProveedor(event.target.value)}
         disabled={disabled || proveedores.length === 0}
         placeholder="Elegí proveedor…"
-        options={proveedores}
+        options={proveedores.map((row) => ({
+          value: row.idProveedor,
+          label: row.nombre
+            ? `${row.proveedor} — ${row.nombre}`
+            : row.proveedor,
+        }))}
         compact
       />
 
