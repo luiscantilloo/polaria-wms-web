@@ -83,6 +83,7 @@ function resolveHeaderKey(header: string): string | null {
     return "skuPrimario";
   }
   if (["precio", "price"].includes(key)) return "precio";
+  if (["costperitem", "cost per item"].includes(key)) return "costPerItem";
   if (["impuesto", "tax", "chargetax"].includes(key)) return "impuesto";
   if (["tracker inv", "tracker inventario", "inventory tracker", "inventorytracker"].includes(key)) {
     return "rastreadorInventario";
@@ -113,6 +114,10 @@ function isRowEmpty(mapped: Record<string, string>): boolean {
   return Object.values(mapped).every((value) => !value.trim());
 }
 
+function resolvePrecio(mapped: Record<string, string>): string {
+  return mapped.precio?.trim() || mapped.costPerItem?.trim() || "";
+}
+
 function validateRequiredFrioFields(
   mapped: Record<string, string>,
   lineNumber: number,
@@ -125,7 +130,7 @@ function validateRequiredFrioFields(
   if (!mapped.categoria?.trim()) missing.push("category");
   if (!mapped.tipo?.trim()) missing.push("productType");
   if (!mapped.estado?.trim()) missing.push("status");
-  if (!mapped.precio?.trim()) missing.push("precio");
+  if (!resolvePrecio(mapped)) missing.push("precio");
 
   if (!missing.length) {
     return null;
@@ -167,6 +172,7 @@ function mapRecordToRow(
   const impuesto = parseSiNo(mapped.impuesto ?? "");
   const unidadVisualizacion =
     mapped.unidadVisualizacion?.toLowerCase() === "peso" ? "peso" : "cantidad";
+  const precio = resolvePrecio(mapped);
 
   const metadatos: CatalogoProductoMetadatos = {
     ...createEmptyCatalogoMetadatos(),
@@ -182,7 +188,7 @@ function mapRecordToRow(
     nombreOpcion1: mapped.nombreOpcion1 || undefined,
     valorOpcion1: mapped.valorOpcion1 || undefined,
     vinculadoOpcion1: mapped.skuPrimario || undefined,
-    precio: mapped.precio,
+    precio,
     rastreadorInventario: mapped.rastreadorInventario || undefined,
     cantidadInventario: mapped.cantidadInventario || undefined,
     ...(publicado !== undefined ? { publicadoTienda: publicado } : {}),
