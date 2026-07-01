@@ -54,4 +54,53 @@ describe("productos-catalogo.service", () => {
     expect(rows[0]?.slug).toBe("producto-demo");
     expect(rows[0]?.stock).toBe("5");
   });
+
+  it("listCatalogoProductosAdmin omite metadatos_catalogo si la columna no existe", async () => {
+    const selectChain = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn(),
+    };
+    selectChain.select.mockReturnValue(selectChain);
+    selectChain.eq.mockReturnValue(selectChain);
+    selectChain.order.mockReturnValue(selectChain);
+    selectChain.limit
+      .mockResolvedValueOnce({
+        data: null,
+        error: {
+          message: "column producto.metadatos_catalogo does not exist",
+        },
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            id_producto: "prod-2",
+            sku: "SKU02",
+            descripcion: "Solo descripcion",
+            codigo_almacen: "PROD02",
+            es_primario: true,
+            es_secundario: false,
+            unidad_visualizacion: "cantidad",
+            id_producto_primario: null,
+          },
+        ],
+        error: null,
+      });
+
+    const from = vi.fn(() => selectChain);
+    setSupabaseClientForTests({ from } as never);
+
+    const rows = await listCatalogoProductosAdmin({ codigoCuenta: "MIT00" });
+
+    expect(selectChain.select).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining("metadatos_catalogo"),
+    );
+    expect(selectChain.select).toHaveBeenNthCalledWith(
+      2,
+      expect.not.stringContaining("metadatos_catalogo"),
+    );
+    expect(rows[0]?.titulo).toBe("Solo descripcion");
+  });
 });

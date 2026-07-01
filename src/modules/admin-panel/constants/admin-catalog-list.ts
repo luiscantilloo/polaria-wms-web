@@ -99,9 +99,6 @@ export const CATALOGO_TABLE_SUBTITLE =
 export const CATALOGO_EMPTY_MESSAGE =
   "No hay productos en el catálogo." as const;
 
-export const CATALOGO_IMPORT_EXCEL_TOOLTIP =
-  "Disponible en iteración próxima" as const;
-
 export const REPORTES_PAGE_TITLE = "Reportes" as const;
 
 export const REPORTES_PAGE_HINT =

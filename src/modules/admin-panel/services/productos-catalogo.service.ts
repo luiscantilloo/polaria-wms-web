@@ -12,6 +12,8 @@ import {
   parseCatalogoMetadatos,
   type CatalogoProductoMetadatos,
 } from "../constants/catalogo-producto";
+import type { CatalogoExcelImportRow } from "../utils/catalogo-excel-import";
+import { parseCatalogoSpreadsheetFile } from "../utils/catalogo-excel-import";
 
 export interface CatalogoProductoListRow {
   idProducto: string;
@@ -46,11 +48,120 @@ interface ProductoDbRow {
   es_secundario: boolean;
   unidad_visualizacion: string;
   id_producto_primario: string | null;
-  metadatos_catalogo: unknown;
+  metadatos_catalogo?: unknown;
 }
 
 const PRODUCTO_LIST_COLUMNS =
-  "id_producto,sku,descripcion,codigo_almacen,es_primario,es_secundario,unidad_visualizacion,id_producto_primario,metadatos_catalogo";
+  "id_producto,sku,descripcion,codigo_almacen,es_primario,es_secundario,unidad_visualizacion,id_producto_primario";
+
+export interface CreateCatalogoProductoInput {
+  codigoCuenta: string;
+  sku: string;
+  titulo: string;
+  unidadMedida: string;
+  unidadVisualizacion: string;
+  esPrimario: boolean;
+  esSecundario: boolean;
+  idProductoPrimario?: string | null;
+  reglaConversionCantidadPrimario?: number | null;
+  reglaConversionUnidadesSecundario?: number | null;
+  mermaPct?: number | null;
+  metadatos: CatalogoProductoMetadatos;
+}
+
+function buildProductoInsertPayload(
+  input: CreateCatalogoProductoInput,
+  codigoCuenta: string,
+  sku: string,
+  titulo: string,
+  codigo: string,
+): Record<string, unknown> {
+  return {
+    codigo_cuenta: codigoCuenta,
+    sku,
+    descripcion: titulo,
+    codigo_almacen: codigo,
+    unidad_medida: input.unidadMedida,
+    unidad_visualizacion: input.unidadVisualizacion,
+    es_primario: input.esPrimario,
+    es_secundario: input.esSecundario,
+    id_producto_primario: input.idProductoPrimario ?? null,
+    regla_conversion_cantidad_primario:
+      input.reglaConversionCantidadPrimario ?? null,
+    regla_conversion_unidades_secundario:
+      input.reglaConversionUnidadesSecundario ?? null,
+    merma_pct: input.mermaPct ?? null,
+    metadatos_catalogo: input.metadatos,
+    esta_activo: true,
+  };
+}
+
+function isMissingMetadatosCatalogoColumn(error: { message?: string } | null): boolean {
+  return Boolean(
+    error?.message?.includes("metadatos_catalogo") &&
+      error.message.includes("does not exist"),
+  );
+}
+
+async function queryProductosCatalogo<T>(
+  buildQuery: (selectColumns: string) => Promise<T[]>,
+): Promise<T[]> {
+  try {
+    return await buildQuery(`${PRODUCTO_LIST_COLUMNS},metadatos_catalogo`);
+  } catch (error: unknown) {
+    if (
+      error instanceof DomainServiceError &&
+      isMissingMetadatosCatalogoColumn({ message: error.message })
+    ) {
+      return buildQuery(PRODUCTO_LIST_COLUMNS);
+    }
+
+    throw error;
+  }
+}
+
+async function insertProductoCatalogo(
+  payload: Record<string, unknown>,
+): Promise<ProductoDbRow> {
+  const insertWithPayload = (body: Record<string, unknown>) =>
+    runDomainMutation<ProductoDbRow>((client) => {
+      const query = client
+        .from("producto")
+        .insert(body)
+        .select(`${PRODUCTO_LIST_COLUMNS},metadatos_catalogo`)
+        .single();
+
+      return query as unknown as Promise<{
+        data: ProductoDbRow | null;
+        error: { message: string } | null;
+      }>;
+    });
+
+  try {
+    return await insertWithPayload(payload);
+  } catch (error: unknown) {
+    if (
+      error instanceof DomainServiceError &&
+      isMissingMetadatosCatalogoColumn({ message: error.message })
+    ) {
+      const { metadatos_catalogo: _meta, ...payloadWithoutMeta } = payload;
+      return runDomainMutation<ProductoDbRow>((client) => {
+        const query = client
+          .from("producto")
+          .insert(payloadWithoutMeta)
+          .select(PRODUCTO_LIST_COLUMNS)
+          .single();
+
+        return query as unknown as Promise<{
+          data: ProductoDbRow | null;
+          error: { message: string } | null;
+        }>;
+      });
+    }
+
+    throw error;
+  }
+}
 
 function resolveTipo(row: ProductoDbRow, meta: CatalogoProductoMetadatos): string {
   if (meta.tipo?.trim()) return meta.tipo.trim();
@@ -105,20 +216,22 @@ export async function listCatalogoProductosAdmin(
   const limit = params.limit ?? DEFAULT_LIST_LIMIT;
   const search = params.search?.trim().toLowerCase() ?? "";
 
-  const rows = await runDomainQuery<ProductoDbRow[]>((client) => {
-    const query = client
-      .from("producto")
-      .select(PRODUCTO_LIST_COLUMNS)
-      .eq("codigo_cuenta", codigoCuenta)
-      .eq("esta_activo", true)
-      .order("created_at", { ascending: false })
-      .limit(limit);
+  const rows = await queryProductosCatalogo((selectColumns) =>
+    runDomainQuery<ProductoDbRow[]>((client) => {
+      const query = client
+        .from("producto")
+        .select(selectColumns)
+        .eq("codigo_cuenta", codigoCuenta)
+        .eq("esta_activo", true)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-    return query as unknown as Promise<{
-      data: ProductoDbRow[] | null;
-      error: { message: string } | null;
-    }>;
-  });
+      return query as unknown as Promise<{
+        data: ProductoDbRow[] | null;
+        error: { message: string } | null;
+      }>;
+    }),
+  );
 
   const mapped = rows.map((row, index) => mapProductoRow(row, index));
 
@@ -150,30 +263,41 @@ export async function listProductosPrimariosCatalogo(
 ): Promise<ProductoPrimarioOption[]> {
   const cuenta = requireCodigoCuenta(codigoCuenta);
 
-  const rows = await runDomainQuery<
-    { id_producto: string; descripcion: string; sku: string; metadatos_catalogo: unknown }[]
-  >((client) => {
-    const query = client
-      .from("producto")
-      .select("id_producto,descripcion,sku,metadatos_catalogo")
-      .eq("codigo_cuenta", cuenta)
-      .eq("esta_activo", true)
-      .eq("es_primario", true)
-      .order("descripcion", { ascending: true })
-      .limit(DEFAULT_LIST_LIMIT);
+  const rows = await queryProductosCatalogo((selectColumns) =>
+    runDomainQuery<
+      {
+        id_producto: string;
+        descripcion: string;
+        sku: string;
+        metadatos_catalogo?: unknown;
+      }[]
+    >((client) => {
+      const primarioColumns = selectColumns.includes("metadatos_catalogo")
+        ? "id_producto,descripcion,sku,metadatos_catalogo"
+        : "id_producto,descripcion,sku";
 
-    return query as unknown as Promise<{
-      data:
-        | {
-            id_producto: string;
-            descripcion: string;
-            sku: string;
-            metadatos_catalogo: unknown;
-          }[]
-        | null;
-      error: { message: string } | null;
-    }>;
-  });
+      const query = client
+        .from("producto")
+        .select(primarioColumns)
+        .eq("codigo_cuenta", cuenta)
+        .eq("esta_activo", true)
+        .eq("es_primario", true)
+        .order("descripcion", { ascending: true })
+        .limit(DEFAULT_LIST_LIMIT);
+
+      return query as unknown as Promise<{
+        data:
+          | {
+              id_producto: string;
+              descripcion: string;
+              sku: string;
+              metadatos_catalogo?: unknown;
+            }[]
+          | null;
+        error: { message: string } | null;
+      }>;
+    }),
+  );
 
   return rows.map((row) => {
     const meta = parseCatalogoMetadatos(row.metadatos_catalogo);
@@ -183,21 +307,6 @@ export async function listProductosPrimariosCatalogo(
       label: titulo ? `${titulo} (${row.sku})` : row.sku,
     };
   });
-}
-
-export interface CreateCatalogoProductoInput {
-  codigoCuenta: string;
-  sku: string;
-  titulo: string;
-  unidadMedida: string;
-  unidadVisualizacion: string;
-  esPrimario: boolean;
-  esSecundario: boolean;
-  idProductoPrimario?: string | null;
-  reglaConversionCantidadPrimario?: number | null;
-  reglaConversionUnidadesSecundario?: number | null;
-  mermaPct?: number | null;
-  metadatos: CatalogoProductoMetadatos;
 }
 
 async function insertCatalogoProducto(
@@ -216,35 +325,9 @@ async function insertCatalogoProducto(
 
   const codigo = generateCodigoCuentaFromNombre(titulo) || sku;
 
-  const inserted = await runDomainMutation<ProductoDbRow>((client) => {
-    const query = client
-      .from("producto")
-      .insert({
-        codigo_cuenta: codigoCuenta,
-        sku,
-        descripcion: titulo,
-        codigo_almacen: codigo,
-        unidad_medida: input.unidadMedida,
-        unidad_visualizacion: input.unidadVisualizacion,
-        es_primario: input.esPrimario,
-        es_secundario: input.esSecundario,
-        id_producto_primario: input.idProductoPrimario ?? null,
-        regla_conversion_cantidad_primario:
-          input.reglaConversionCantidadPrimario ?? null,
-        regla_conversion_unidades_secundario:
-          input.reglaConversionUnidadesSecundario ?? null,
-        merma_pct: input.mermaPct ?? null,
-        metadatos_catalogo: input.metadatos,
-        esta_activo: true,
-      })
-      .select(PRODUCTO_LIST_COLUMNS)
-      .single();
-
-    return query as unknown as Promise<{
-      data: ProductoDbRow | null;
-      error: { message: string } | null;
-    }>;
-  });
+  const inserted = await insertProductoCatalogo(
+    buildProductoInsertPayload(input, codigoCuenta, sku, titulo, codigo),
+  );
 
   return mapProductoRow(inserted, 0);
 }
@@ -277,4 +360,115 @@ export async function createCatalogoProductoSecundario(
     esPrimario: false,
     esSecundario: true,
   });
+}
+
+export interface CatalogoImportResult {
+  imported: number;
+  errors: string[];
+}
+
+async function createImportRow(
+  codigoCuenta: string,
+  row: CatalogoExcelImportRow,
+  primariosBySku: Map<string, string>,
+): Promise<void> {
+  const unidadMedida = row.unidadVisualizacion === "peso" ? "g" : "und";
+
+  if (row.tipo === "primario") {
+    await createCatalogoProductoPrimario({
+      codigoCuenta,
+      sku: row.sku,
+      titulo: row.titulo,
+      unidadMedida,
+      unidadVisualizacion: row.unidadVisualizacion,
+      metadatos: row.metadatos,
+    });
+    return;
+  }
+
+  const idProductoPrimario = primariosBySku.get(row.skuPrimario ?? "");
+  if (!idProductoPrimario) {
+    throw new DomainServiceError(
+      `No se encontró primario con SKU "${row.skuPrimario}" para "${row.sku}".`,
+      "INVALID_ARGUMENT",
+    );
+  }
+
+  await createCatalogoProductoSecundario({
+    codigoCuenta,
+    sku: row.sku,
+    titulo: row.titulo,
+    unidadMedida,
+    unidadVisualizacion: row.unidadVisualizacion,
+    idProductoPrimario,
+    metadatos: row.metadatos,
+  });
+}
+
+/** Importa productos desde Excel/CSV (primarios y luego secundarios). */
+export async function importCatalogoProductosFromFile(
+  codigoCuenta: string,
+  file: File,
+): Promise<CatalogoImportResult> {
+  const cuenta = requireCodigoCuenta(codigoCuenta);
+  const { rows, errors: parseErrors } = await parseCatalogoSpreadsheetFile(file);
+
+  if (!rows.length) {
+    return { imported: 0, errors: parseErrors };
+  }
+
+  const primarios = rows.filter((row) => row.tipo === "primario");
+  const secundarios = rows.filter((row) => row.tipo === "secundario");
+  const primariosBySku = new Map<string, string>();
+  const errors = [...parseErrors];
+  let imported = 0;
+
+  for (const row of primarios) {
+    try {
+      const created = await createCatalogoProductoPrimario({
+        codigoCuenta: cuenta,
+        sku: row.sku,
+        titulo: row.titulo,
+        unidadMedida: row.unidadVisualizacion === "peso" ? "g" : "und",
+        unidadVisualizacion: row.unidadVisualizacion,
+        metadatos: row.metadatos,
+      });
+      primariosBySku.set(row.sku, created.idProducto);
+      imported += 1;
+    } catch (err: unknown) {
+      errors.push(
+        `SKU ${row.sku}: ${
+          err instanceof DomainServiceError
+            ? err.message
+            : "No se pudo importar el producto."
+        }`,
+      );
+    }
+  }
+
+  const existingPrimarios = await listProductosPrimariosCatalogo(cuenta);
+  for (const option of existingPrimarios) {
+    const skuMatch = /\(([^)]+)\)\s*$/.exec(option.label);
+    const sku = skuMatch?.[1]?.trim();
+    if (sku && !primariosBySku.has(sku)) {
+      primariosBySku.set(sku, option.idProducto);
+    }
+  }
+
+  for (const row of secundarios) {
+    try {
+      await createImportRow(cuenta, row, primariosBySku);
+      imported += 1;
+    } catch (err: unknown) {
+      errors.push(
+        `SKU ${row.sku}: ${
+          err instanceof DomainServiceError
+            ? err.message
+            : "No se pudo importar el producto."
+        }`,
+      );
+    }
+  }
+
+  return { imported, errors };
 }

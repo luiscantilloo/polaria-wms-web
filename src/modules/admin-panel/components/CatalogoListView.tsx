@@ -1,20 +1,21 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { PolariaDataTable } from "@/components/shared/PolariaDataTable";
 import { PolariaTableCode } from "@/components/shared/PolariaTableCells";
 import { useAsyncQuery } from "@/hooks/useAsyncQuery";
+import { cn } from "@/lib/cn";
 import { useCompany } from "@/providers/CompanyProvider";
 import {
   ADMIN_CATALOG_SECTION_LABEL,
   CATALOGO_EMPTY_MESSAGE,
-  CATALOGO_IMPORT_EXCEL_TOOLTIP,
   CATALOGO_PAGE_HINT,
   CATALOGO_PAGE_TITLE,
   CATALOGO_TABLE_SUBTITLE,
   CATALOGO_TABLE_TITLE,
 } from "../constants/admin-catalog-list";
 import {
+  importCatalogoProductosFromFile,
   listCatalogoProductosAdmin,
   type CatalogoProductoListRow,
 } from "../services/productos-catalogo.service";
@@ -24,7 +25,11 @@ import { ProductoSecundarioCreateModal } from "./ProductoSecundarioCreateModal";
 
 export function CatalogoListView() {
   const { codigoCuenta } = useCompany();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSecundarioOpen, setIsSecundarioOpen] = useState(false);
 
@@ -42,6 +47,48 @@ export function CatalogoListView() {
   );
 
   const rows = data ?? [];
+
+  const handleImportExcel = () => {
+    if (!codigoCuenta || isImporting) return;
+    setImportMessage(null);
+    setImportError(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (file: File | undefined) => {
+    if (!file || !codigoCuenta) return;
+
+    setIsImporting(true);
+    setImportMessage(null);
+    setImportError(null);
+
+    try {
+      const result = await importCatalogoProductosFromFile(codigoCuenta, file);
+
+      if (result.imported > 0) {
+        await reload();
+        setImportMessage(
+          result.errors.length
+            ? `Se importaron ${result.imported} producto(s). ${result.errors.length} fila(s) con error.`
+            : `Se importaron ${result.imported} producto(s) desde ${file.name}.`,
+        );
+      } else {
+        setImportError("No se importó ningún producto.");
+      }
+
+      if (result.errors.length) {
+        setImportError(result.errors.slice(0, 5).join(" "));
+      }
+    } catch (err: unknown) {
+      setImportError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo procesar el archivo de importación.",
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const columns = useMemo(
     () =>
@@ -130,6 +177,40 @@ export function CatalogoListView() {
       title={CATALOGO_PAGE_TITLE}
       hint={CATALOGO_PAGE_HINT}
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        className="hidden"
+        onChange={(event) => {
+          void handleFileSelected(event.target.files?.[0]);
+          event.target.value = "";
+        }}
+      />
+
+      {importMessage ? (
+        <p
+          role="status"
+          className="mb-4 rounded-lg border border-polaria-w-08 bg-polaria-w-08 px-3 py-2 polaria-text-body-sm text-polaria-w-50"
+        >
+          {importMessage}
+        </p>
+      ) : null}
+
+      {importError ? (
+        <p
+          role="alert"
+          className={cn(
+            "mb-4 rounded-lg border px-3 py-2 polaria-text-body-sm",
+            importMessage
+              ? "border-polaria-warning-border bg-polaria-warning-bg text-polaria-warning"
+              : "border-polaria-t-20 bg-polaria-t-08 text-polaria-w-50",
+          )}
+        >
+          {importError}
+        </p>
+      ) : null}
+
       <PolariaDataTable
         title={CATALOGO_TABLE_TITLE}
         subtitle={CATALOGO_TABLE_SUBTITLE}
@@ -145,7 +226,7 @@ export function CatalogoListView() {
         onRefresh={() => {
           void reload();
         }}
-        isRefreshing={isRefreshing}
+        isRefreshing={isRefreshing || isImporting}
         search={{
           value: search,
           onChange: setSearch,
@@ -153,9 +234,9 @@ export function CatalogoListView() {
         }}
         additionalActions={[
           {
-            label: "Importar Excel",
-            disabled: true,
-            title: CATALOGO_IMPORT_EXCEL_TOOLTIP,
+            label: isImporting ? "Importando…" : "Importar Excel",
+            onClick: handleImportExcel,
+            disabled: !codigoCuenta || isImporting,
             variant: "outline",
           },
           {

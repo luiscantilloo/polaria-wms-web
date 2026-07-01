@@ -14,7 +14,7 @@ import type {
 
 const SOLICITUD_COLUMNS =
   "id_solicitud_compra,codigo_cuenta,id_bodega,id_proveedor,id_orden_compra,codigo,estado,id_solicitante,observaciones,created_at,updated_at," +
-  "solicitud_compra_linea(id_linea_solicitud_compra,id_producto,cantidad,producto(sku,descripcion,codigo_almacen,metadatos_catalogo))";
+  "solicitud_compra_linea(id_linea_solicitud_compra,id_producto,cantidad,producto(sku,descripcion,codigo_almacen))";
 
 const ORDEN_COLUMNS =
   "id_orden_compra,codigo_cuenta,id_bodega,id_proveedor,id_solicitud_compra,id_creador,codigo,estado,fecha_emision,fecha_entrega_estimada,destino_tipo,observaciones,created_at,updated_at";
@@ -67,13 +67,11 @@ interface SolicitudCompraLineaDbRow {
         sku: string | null;
         descripcion: string | null;
         codigo_almacen: string | null;
-        metadatos_catalogo: unknown;
       }
     | {
         sku: string | null;
         descripcion: string | null;
         codigo_almacen: string | null;
-        metadatos_catalogo: unknown;
       }[]
     | null;
 }

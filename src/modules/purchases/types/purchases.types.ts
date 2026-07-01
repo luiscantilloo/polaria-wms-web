@@ -22,7 +22,7 @@ export interface SolicitudCompraLineaRow {
     sku: string | null;
     descripcion: string | null;
     codigo_almacen: string | null;
-    metadatos_catalogo: unknown;
+    metadatos_catalogo?: unknown;
   } | null;
 }
 
