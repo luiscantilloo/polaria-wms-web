@@ -6,8 +6,9 @@ export interface SolicitudCompraLineaInput {
 }
 
 export interface CreateSolicitudCompraApiInput {
-  idProveedor: string;
+  codigoCuenta: string;
   idBodega: string;
+  idProveedor?: string | null;
   observaciones?: string | null;
   lineas: SolicitudCompraLineaInput[];
 }

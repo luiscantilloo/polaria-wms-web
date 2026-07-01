@@ -39,7 +39,7 @@ describe("purchases-api.service", () => {
     });
 
     const row = await createSolicitudCompraApi({
-      idProveedor: "prov-1",
+      codigoCuenta: "CUENTA-01",
       idBodega: "bod-1",
       lineas: [{ idProducto: "prod-1", cantidad: 10 }],
     });
@@ -48,7 +48,7 @@ describe("purchases-api.service", () => {
       method: "POST",
       auth: true,
       body: {
-        idProveedor: "prov-1",
+        codigoCuenta: "CUENTA-01",
         idBodega: "bod-1",
         observaciones: null,
         lineas: [{ idProducto: "prod-1", cantidad: 10 }],
@@ -60,7 +60,7 @@ describe("purchases-api.service", () => {
   it("createSolicitudCompraApi valida líneas", async () => {
     await expect(
       createSolicitudCompraApi({
-        idProveedor: "prov-1",
+        codigoCuenta: "CUENTA-01",
         idBodega: "bod-1",
         lineas: [],
       }),

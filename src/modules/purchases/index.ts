@@ -43,3 +43,4 @@ export {
 export { ComprasPageContent } from "./components/ComprasPageContent";
 export { IngresoPageContent } from "./components/IngresoPageContent";
 export { SolicitudCompraCreateModal } from "./components/SolicitudCompraCreateModal";
+export { SolicitudCompraDetalleModal } from "./components/SolicitudCompraDetalleModal";

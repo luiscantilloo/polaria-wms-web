@@ -7,7 +7,9 @@ import {
   PolariaTableCode,
 } from "@/components/shared/PolariaTableCells";
 import { formatDateTime } from "@/components/shared/formatters";
+import { WmsRol } from "@/constants/roles";
 import { useAsyncQuery } from "@/hooks/useAsyncQuery";
+import { usePermissions } from "@/hooks/usePermissions";
 import { DomainServiceError } from "@/lib/domain-service-error";
 import { cn } from "@/lib/cn";
 import { useCompany } from "@/providers/CompanyProvider";
@@ -31,13 +33,15 @@ import {
   listSolicitudesCompra,
 } from "../services/purchases.service";
 import type { OrdenCompraRow, SolicitudCompraRow } from "../types/purchases.types";
+import {
+  compareSolicitudCompraByCodigoDesc,
+  nombresProductosSolicitud,
+  pesosProductosSolicitud,
+} from "../utils/solicitud-compra-display";
 import { SolicitudCompraCreateModal } from "./SolicitudCompraCreateModal";
+import { SolicitudCompraDetalleModal } from "./SolicitudCompraDetalleModal";
 
 type ComprasTab = "solicitudes" | "ordenes";
-
-function formatEstadoSolicitud(estado: SolicitudCompraRow["estado"]): string {
-  return ESTADO_SOLICITUD_LABELS[estado] ?? estado;
-}
 
 function formatEstadoOrden(estado: OrdenCompraRow["estado"]): string {
   return ESTADO_ORDEN_LABELS[estado] ?? estado;
@@ -61,14 +65,20 @@ function formatObservacionesOrden(
 
 export function ComprasPageContent() {
   const { codigoCuenta, activeBodegaId } = useCompany();
+  const { idRol } = usePermissions();
   const [activeTab, setActiveTab] = useState<ComprasTab>("solicitudes");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [solicitudDetalle, setSolicitudDetalle] =
+    useState<SolicitudCompraRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [notifiedOrdenIds, setNotifiedOrdenIds] = useState<Set<string>>(
     () => new Set(),
   );
+
+  const puedeAprobarSolicitud =
+    idRol === WmsRol.administrador_cuenta || idRol === WmsRol.configurador;
 
   const fetchSolicitudes = useCallback(() => {
     if (!codigoCuenta) {
@@ -95,6 +105,12 @@ export function ComprasPageContent() {
   const solicitudes = useAsyncQuery(fetchSolicitudes, Boolean(codigoCuenta));
   const ordenes = useAsyncQuery(fetchOrdenes, Boolean(codigoCuenta));
 
+  const solicitudesOrdenadas = useMemo(
+    () =>
+      [...(solicitudes.data ?? [])].sort(compareSolicitudCompraByCodigoDesc),
+    [solicitudes.data],
+  );
+
   const runAction = useCallback(
     async (actionId: string, action: () => Promise<unknown>) => {
       setActionError(null);
@@ -104,6 +120,7 @@ export function ComprasPageContent() {
       try {
         await action();
         await Promise.all([solicitudes.reload(), ordenes.reload()]);
+        setSolicitudDetalle(null);
       } catch (err: unknown) {
         setActionError(
           err instanceof DomainServiceError
@@ -158,92 +175,91 @@ export function ComprasPageContent() {
       [
         {
           id: "codigo",
-          header: "Código",
+          header: "Solicitud",
           cell: (row: SolicitudCompraRow) => (
             <PolariaTableCode>{row.codigo}</PolariaTableCode>
           ),
         },
         {
-          id: "estado",
-          header: "Estado",
+          id: "productos",
+          header: "Productos",
           cell: (row: SolicitudCompraRow) => (
-            <PolariaTableBadge variant="neutral">
-              {formatEstadoSolicitud(row.estado)}
-            </PolariaTableBadge>
+            <span
+              className="line-clamp-2 font-medium"
+              title={nombresProductosSolicitud(row)}
+            >
+              {nombresProductosSolicitud(row)}
+            </span>
           ),
         },
         {
-          id: "proveedor",
-          header: "Proveedor",
-          cell: (row: SolicitudCompraRow) => row.id_proveedor ?? "—",
-          cellClassName: "font-mono text-xs text-polaria-w-50",
-        },
-        {
-          id: "bodega",
-          header: "Bodega",
-          cell: (row: SolicitudCompraRow) => row.id_bodega,
-          cellClassName: "font-mono text-xs text-polaria-w-50",
-        },
-        {
-          id: "created",
-          header: "Creada",
-          cell: (row: SolicitudCompraRow) => formatDateTime(row.created_at),
-          cellClassName: "text-polaria-w-50",
-        },
-        {
-          id: "acciones",
-          header: "Acciones",
-          cell: (row: SolicitudCompraRow) => {
-            const isPending = pendingActionId?.startsWith(row.id_solicitud_compra);
-
-            if (row.estado === "borrador") {
-              return (
-                <ActionButton
-                  label="Enviar aprobación"
-                  disabled={Boolean(isPending)}
-                  onClick={() => {
-                    void runAction(`${row.id_solicitud_compra}:enviar`, () =>
-                      enviarSolicitudCompraAprobacionApi(row.id_solicitud_compra),
-                    );
-                  }}
-                />
-              );
-            }
-
-            if (row.estado === "pendiente_aprobacion") {
-              return (
-                <ActionButton
-                  label="Aprobar"
-                  disabled={Boolean(isPending)}
-                  onClick={() => {
-                    void runAction(`${row.id_solicitud_compra}:aprobar`, () =>
-                      aprobarSolicitudCompraApi(row.id_solicitud_compra),
-                    );
-                  }}
-                />
-              );
-            }
-
-            if (row.estado === "aprobada") {
-              return (
-                <ActionButton
-                  label="Convertir a OC"
-                  disabled={Boolean(isPending)}
-                  onClick={() => {
-                    void runAction(`${row.id_solicitud_compra}:convertir`, () =>
-                      convertirSolicitudCompraAOrdenApi(row.id_solicitud_compra),
-                    );
-                  }}
-                />
-              );
-            }
-
-            return "—";
-          },
+          id: "peso",
+          header: "Peso",
+          cell: (row: SolicitudCompraRow) => (
+            <span
+              className="tabular-nums text-polaria-w-50"
+              title={pesosProductosSolicitud(row)}
+            >
+              {pesosProductosSolicitud(row)}
+            </span>
+          ),
+          cellClassName: "whitespace-nowrap",
         },
       ] as const,
-    [pendingActionId, runAction],
+    [],
   );
+
+  const renderSolicitudActions = (row: SolicitudCompraRow): ReactNode => {
+    const isPending = pendingActionId?.startsWith(row.id_solicitud_compra);
+
+    if (row.estado === "borrador") {
+      return (
+        <ActionButton
+          label="Enviar aprobación"
+          disabled={Boolean(isPending)}
+          onClick={() => {
+            void runAction(`${row.id_solicitud_compra}:enviar`, () =>
+              enviarSolicitudCompraAprobacionApi(row.id_solicitud_compra),
+            );
+          }}
+        />
+      );
+    }
+
+    if (row.estado === "pendiente_aprobacion" && puedeAprobarSolicitud) {
+      return (
+        <ActionButton
+          label="Aprobar"
+          disabled={Boolean(isPending)}
+          onClick={() => {
+            void runAction(`${row.id_solicitud_compra}:aprobar`, () =>
+              aprobarSolicitudCompraApi(row.id_solicitud_compra),
+            );
+          }}
+        />
+      );
+    }
+
+    if (row.estado === "aprobada") {
+      return (
+        <ActionButton
+          label="Convertir a OC"
+          disabled={Boolean(isPending)}
+          onClick={() => {
+            void runAction(`${row.id_solicitud_compra}:convertir`, () =>
+              convertirSolicitudCompraAOrdenApi(row.id_solicitud_compra),
+            );
+          }}
+        />
+      );
+    }
+
+    return (
+      <PolariaTableBadge variant="neutral">
+        {ESTADO_SOLICITUD_LABELS[row.estado] ?? row.estado}
+      </PolariaTableBadge>
+    );
+  };
 
   const ordenColumns = useMemo(
     () =>
@@ -376,17 +392,19 @@ export function ComprasPageContent() {
       {activeTab === "solicitudes" ? (
         <PolariaDataTable
           title="Solicitudes de compra"
-          subtitle="Flujo de aprobación y conversión a orden."
+          subtitle="Solicitud · productos · peso kg"
           isLoading={solicitudes.isLoading}
           error={solicitudes.error ?? tenantError}
-          rows={solicitudes.data ?? []}
+          rows={solicitudesOrdenadas}
           columns={solicitudColumns}
           getRowKey={(row) => row.id_solicitud_compra}
-          emptyMessage="Sin solicitudes de compra registradas."
+          emptyMessage="No hay solicitudes. Usá «Nueva solicitud» para crear la primera."
           onRefresh={() => {
             void solicitudes.reload();
           }}
           isRefreshing={solicitudes.isRefreshing}
+          onRowClick={(row) => setSolicitudDetalle(row)}
+          getRowAriaLabel={(row) => `Ver detalle de solicitud ${row.codigo}`}
           primaryAction={{
             label: "Nueva solicitud",
             onClick: () => setIsCreateOpen(true),
@@ -416,6 +434,14 @@ export function ComprasPageContent() {
           void solicitudes.reload();
         }}
       />
+
+      {solicitudDetalle ? (
+        <SolicitudCompraDetalleModal
+          solicitud={solicitudDetalle}
+          onClose={() => setSolicitudDetalle(null)}
+          actions={renderSolicitudActions(solicitudDetalle)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -25,13 +25,14 @@ async function postComprasApi<T>(path: string, body?: unknown): Promise<T> {
 export async function createSolicitudCompraApi(
   input: CreateSolicitudCompraApiInput,
 ): Promise<SolicitudCompraApiRow> {
-  const idProveedor = input.idProveedor.trim();
+  const codigoCuenta = input.codigoCuenta.trim();
   const idBodega = input.idBodega.trim();
   const observaciones = input.observaciones?.trim() ?? "";
+  const idProveedor = input.idProveedor?.trim() ?? "";
 
-  if (!idProveedor) {
+  if (!codigoCuenta) {
     throw new DomainServiceError(
-      "Selecciona un proveedor.",
+      "No se encontró la cuenta activa.",
       "INVALID_ARGUMENT",
     );
   }
@@ -72,8 +73,9 @@ export async function createSolicitudCompraApi(
   });
 
   return postComprasApi<SolicitudCompraApiRow>("/compras/solicitudes", {
-    idProveedor,
+    codigoCuenta,
     idBodega,
+    ...(idProveedor ? { idProveedor } : {}),
     observaciones: observaciones || null,
     lineas,
   });
