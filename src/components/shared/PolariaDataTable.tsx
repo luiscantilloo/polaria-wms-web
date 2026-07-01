@@ -40,6 +40,9 @@ export interface PolariaDataTableProps<T> {
     placeholder?: string;
   };
   className?: string;
+  /** Fila clickeable (p. ej. abrir detalle). */
+  onRowClick?: (row: T) => void;
+  getRowAriaLabel?: (row: T) => string;
 }
 
 export function PolariaDataTable<T>({
@@ -57,6 +60,8 @@ export function PolariaDataTable<T>({
   additionalActions,
   search,
   className,
+  onRowClick,
+  getRowAriaLabel,
 }: PolariaDataTableProps<T>) {
   const showTable = !isLoading && !error;
 
@@ -203,7 +208,35 @@ export function PolariaDataTable<T>({
                 rows.map((row) => (
                   <tr
                     key={getRowKey(row)}
-                    className="border-t border-polaria-w-08 text-polaria-w"
+                    className={cn(
+                      "border-t border-polaria-w-08 text-polaria-w",
+                      onRowClick &&
+                        "cursor-pointer transition-colors hover:bg-polaria-t-08 focus-visible:bg-polaria-t-08 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-polaria-teal",
+                    )}
+                    onClick={
+                      onRowClick
+                        ? () => {
+                            onRowClick(row);
+                          }
+                        : undefined
+                    }
+                    onKeyDown={
+                      onRowClick
+                        ? (event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              onRowClick(row);
+                            }
+                          }
+                        : undefined
+                    }
+                    tabIndex={onRowClick ? 0 : undefined}
+                    role={onRowClick ? "button" : undefined}
+                    aria-label={
+                      onRowClick && getRowAriaLabel
+                        ? getRowAriaLabel(row)
+                        : undefined
+                    }
                   >
                     {columns.map((column) => (
                       <td

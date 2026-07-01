@@ -14,6 +14,18 @@ export type EstadoOrdenCompra =
   | "cerrada"
   | "cancelada";
 
+export interface SolicitudCompraLineaRow {
+  id_linea_solicitud_compra: string;
+  id_producto: string;
+  cantidad: number;
+  producto?: {
+    sku: string | null;
+    descripcion: string | null;
+    codigo_almacen: string | null;
+    metadatos_catalogo: unknown;
+  } | null;
+}
+
 export interface SolicitudCompraRow {
   id_solicitud_compra: string;
   codigo_cuenta: string;
@@ -26,6 +38,7 @@ export interface SolicitudCompraRow {
   observaciones: string | null;
   created_at: string;
   updated_at: string;
+  lineas?: SolicitudCompraLineaRow[];
 }
 
 export interface OrdenCompraRow {

@@ -8,11 +8,13 @@ import { DomainServiceError } from "@/lib/domain-service-error";
 import type {
   OrdenCompraRow,
   RecepcionCompraRow,
+  SolicitudCompraLineaRow,
   SolicitudCompraRow,
 } from "../types/purchases.types";
 
 const SOLICITUD_COLUMNS =
-  "id_solicitud_compra,codigo_cuenta,id_bodega,id_proveedor,id_orden_compra,codigo,estado,id_solicitante,observaciones,created_at,updated_at";
+  "id_solicitud_compra,codigo_cuenta,id_bodega,id_proveedor,id_orden_compra,codigo,estado,id_solicitante,observaciones,created_at,updated_at," +
+  "solicitud_compra_linea(id_linea_solicitud_compra,id_producto,cantidad,producto(sku,descripcion,codigo_almacen,metadatos_catalogo))";
 
 const ORDEN_COLUMNS =
   "id_orden_compra,codigo_cuenta,id_bodega,id_proveedor,id_solicitud_compra,id_creador,codigo,estado,fecha_emision,fecha_entrega_estimada,destino_tipo,observaciones,created_at,updated_at";
@@ -56,6 +58,60 @@ function mapOrdenCompraLineaRow(row: OrdenCompraLineaDbRow): OrdenCompraLineaRow
   return { sku, cantidad, unidad };
 }
 
+interface SolicitudCompraLineaDbRow {
+  id_linea_solicitud_compra: string;
+  id_producto: string;
+  cantidad: string | number;
+  producto:
+    | {
+        sku: string | null;
+        descripcion: string | null;
+        codigo_almacen: string | null;
+        metadatos_catalogo: unknown;
+      }
+    | {
+        sku: string | null;
+        descripcion: string | null;
+        codigo_almacen: string | null;
+        metadatos_catalogo: unknown;
+      }[]
+    | null;
+}
+
+interface SolicitudCompraDbRow extends Omit<SolicitudCompraRow, "lineas"> {
+  solicitud_compra_linea: SolicitudCompraLineaDbRow[] | null;
+}
+
+function resolveLineaProducto(
+  producto: SolicitudCompraLineaDbRow["producto"],
+): SolicitudCompraLineaRow["producto"] {
+  if (!producto) {
+    return null;
+  }
+
+  return Array.isArray(producto) ? (producto[0] ?? null) : producto;
+}
+
+function mapSolicitudCompraLineaRow(
+  row: SolicitudCompraLineaDbRow,
+): SolicitudCompraLineaRow {
+  return {
+    id_linea_solicitud_compra: row.id_linea_solicitud_compra,
+    id_producto: row.id_producto,
+    cantidad: Number(row.cantidad),
+    producto: resolveLineaProducto(row.producto),
+  };
+}
+
+function mapSolicitudCompraRow(row: SolicitudCompraDbRow): SolicitudCompraRow {
+  const { solicitud_compra_linea, ...solicitud } = row;
+
+  return {
+    ...solicitud,
+    lineas: (solicitud_compra_linea ?? []).map(mapSolicitudCompraLineaRow),
+  };
+}
+
 // TODO POL-5+: crear/aprobar solicitudes y órdenes vía apiRequest al API Nest.
 
 export async function listSolicitudesCompra(
@@ -72,10 +128,10 @@ export async function listSolicitudesCompra(
       .limit(limit);
 
     return query as unknown as Promise<{
-      data: SolicitudCompraRow[] | null;
+      data: SolicitudCompraDbRow[] | null;
       error: { message: string } | null;
     }>;
-  });
+  }).then((rows) => rows.map(mapSolicitudCompraRow));
 }
 
 export async function listOrdenesCompra(
