@@ -5,6 +5,7 @@ import type {
   OrdenCompraLineaRow,
   OrdenCompraRow,
 } from "../types/purchases.types";
+import { resumirProductosTabla } from "./compras-table-display";
 
 export function resolveOrdenLineaTitulo(linea: OrdenCompraLineaRow): string {
   const producto = linea.producto;
@@ -21,12 +22,19 @@ export function resolveOrdenLineaTitulo(linea: OrdenCompraLineaRow): string {
   );
 }
 
-export function nombresProductosOrden(orden: OrdenCompraRow): string {
-  const names = (orden.lineas ?? [])
+export function listNombresProductosOrden(orden: OrdenCompraRow): string[] {
+  return (orden.lineas ?? [])
     .map((linea) => resolveOrdenLineaTitulo(linea))
     .filter(Boolean);
+}
 
+export function nombresProductosOrden(orden: OrdenCompraRow): string {
+  const names = listNombresProductosOrden(orden);
   return names.length ? names.join(" · ") : "—";
+}
+
+export function productosOrdenTablaResumen(orden: OrdenCompraRow): string {
+  return resumirProductosTabla(listNombresProductosOrden(orden));
 }
 
 export function formatFechaOrden(value: string | null | undefined): string {

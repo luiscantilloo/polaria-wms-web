@@ -17,6 +17,12 @@ import {
   ESTADO_SOLICITUD_LABELS,
 } from "../constants/purchases-labels";
 import {
+  ORDENES_TABLE_MIN_WIDTH_CLASS,
+  ordenTableColumnClass,
+  SOLICITUDES_TABLE_MIN_WIDTH_CLASS,
+  solicitudTableColumnClass,
+} from "../constants/compras-table-layout";
+import {
   aprobarSolicitudCompraApi,
   convertirSolicitudCompraAOrdenApi,
   emitirOrdenCompraApi,
@@ -37,11 +43,13 @@ import {
   formatFechaOrden,
   formatObservacionOrden,
   nombresProductosOrden,
+  productosOrdenTablaResumen,
 } from "../utils/orden-compra-display";
 import {
   compareSolicitudCompraByCodigoDesc,
   nombresProductosSolicitud,
   pesosProductosSolicitud,
+  productosSolicitudTablaResumen,
 } from "../utils/solicitud-compra-display";
 import { OrdenCompraCreateModal } from "./OrdenCompraCreateModal";
 import { OrdenCompraDetalleModal } from "./OrdenCompraDetalleModal";
@@ -245,31 +253,34 @@ export function ComprasPageContent() {
           cell: (row: SolicitudCompraRow) => (
             <PolariaTableCode>{row.codigo}</PolariaTableCode>
           ),
+          headerClassName: solicitudTableColumnClass("codigo"),
+          cellClassName: solicitudTableColumnClass("codigo"),
         },
         {
           id: "productos",
           header: "Productos",
           cell: (row: SolicitudCompraRow) => (
-            <span
-              className="line-clamp-2 font-medium"
+            <TableCellText
+              text={productosSolicitudTablaResumen(row)}
               title={nombresProductosSolicitud(row)}
-            >
-              {nombresProductosSolicitud(row)}
-            </span>
+              className="font-medium"
+            />
           ),
+          headerClassName: solicitudTableColumnClass("productos"),
+          cellClassName: solicitudTableColumnClass("productos"),
         },
         {
           id: "peso",
           header: "Peso",
           cell: (row: SolicitudCompraRow) => (
-            <span
-              className="tabular-nums text-polaria-w-50"
+            <TableCellText
+              text={pesosProductosSolicitud(row)}
               title={pesosProductosSolicitud(row)}
-            >
-              {pesosProductosSolicitud(row)}
-            </span>
+              className="tabular-nums text-polaria-w-50"
+            />
           ),
-          cellClassName: "whitespace-nowrap",
+          headerClassName: solicitudTableColumnClass("peso"),
+          cellClassName: solicitudTableColumnClass("peso"),
         },
       ] as const,
     [],
@@ -282,6 +293,7 @@ export function ComprasPageContent() {
       return (
         <ActionButton
           label="Enviar aprobación"
+          primary
           disabled={Boolean(isPending)}
           onClick={() => {
             void runAction(`${row.id_solicitud_compra}:enviar`, () =>
@@ -296,6 +308,7 @@ export function ComprasPageContent() {
       return (
         <ActionButton
           label="Aprobar"
+          primary
           disabled={Boolean(isPending)}
           onClick={() => {
             void runAction(`${row.id_solicitud_compra}:aprobar`, () =>
@@ -310,6 +323,7 @@ export function ComprasPageContent() {
       return (
         <ActionButton
           label="Convertir a OC"
+          primary
           disabled={Boolean(isPending)}
           onClick={() => {
             void runAction(`${row.id_solicitud_compra}:convertir`, () =>
@@ -380,23 +394,33 @@ export function ComprasPageContent() {
           cell: (row: OrdenCompraRow) => (
             <PolariaTableCode>{row.codigo}</PolariaTableCode>
           ),
+          headerClassName: ordenTableColumnClass("orden"),
+          cellClassName: ordenTableColumnClass("orden"),
         },
         {
           id: "proveedor",
           header: "Proveedor",
-          cell: (row: OrdenCompraRow) => row.proveedor_nombre ?? "—",
+          cell: (row: OrdenCompraRow) => (
+            <TableCellText
+              text={row.proveedor_nombre?.trim() || "—"}
+              title={row.proveedor_nombre?.trim() || undefined}
+            />
+          ),
+          headerClassName: ordenTableColumnClass("proveedor"),
+          cellClassName: ordenTableColumnClass("proveedor"),
         },
         {
           id: "productos",
           header: "Productos",
           cell: (row: OrdenCompraRow) => (
-            <span
-              className="line-clamp-2 font-medium"
+            <TableCellText
+              text={productosOrdenTablaResumen(row)}
               title={nombresProductosOrden(row)}
-            >
-              {nombresProductosOrden(row)}
-            </span>
+              className="font-medium"
+            />
           ),
+          headerClassName: ordenTableColumnClass("productos"),
+          cellClassName: ordenTableColumnClass("productos"),
         },
         {
           id: "estado",
@@ -406,19 +430,31 @@ export function ComprasPageContent() {
               {formatEstadoOrden(row.estado)}
             </PolariaTableBadge>
           ),
+          headerClassName: ordenTableColumnClass("estado"),
+          cellClassName: ordenTableColumnClass("estado"),
         },
         {
           id: "fecha",
           header: "Fecha",
           cell: (row: OrdenCompraRow) => formatFechaOrden(row.fecha_emision),
-          cellClassName: "text-polaria-w-50 whitespace-nowrap",
+          headerClassName: ordenTableColumnClass("fecha"),
+          cellClassName: ordenTableColumnClass("fecha"),
         },
         {
           id: "observacion",
           header: "Observación",
-          cell: (row: OrdenCompraRow) =>
-            formatObservacionesOrden(row, notifiedOrdenIds),
-          cellClassName: "text-polaria-w-50",
+          cell: (row: OrdenCompraRow) => {
+            const text = formatObservacionesOrden(row, notifiedOrdenIds);
+            return (
+              <TableCellText
+                text={text}
+                title={text !== "—" ? text : undefined}
+                className="text-polaria-w-50"
+              />
+            );
+          },
+          headerClassName: ordenTableColumnClass("observacion"),
+          cellClassName: ordenTableColumnClass("observacion"),
         },
       ] as const,
     [notifiedOrdenIds],
@@ -478,6 +514,7 @@ export function ComprasPageContent() {
           isRefreshing={solicitudes.isRefreshing}
           onRowClick={(row) => setSolicitudDetalle(row)}
           getRowAriaLabel={(row) => `Ver detalle de solicitud ${row.codigo}`}
+          tableClassName={SOLICITUDES_TABLE_MIN_WIDTH_CLASS}
           primaryAction={{
             label: "Nueva solicitud",
             onClick: () => setIsCreateOpen(true),
@@ -499,6 +536,7 @@ export function ComprasPageContent() {
           isRefreshing={ordenes.isRefreshing}
           onRowClick={(row) => setOrdenDetalle(row)}
           getRowAriaLabel={(row) => `Ver detalle de orden ${row.codigo}`}
+          tableClassName={ORDENES_TABLE_MIN_WIDTH_CLASS}
           primaryAction={{
             label: "Nueva orden",
             onClick: () => setIsOrdenCreateOpen(true),
@@ -549,6 +587,25 @@ export function ComprasPageContent() {
         />
       ) : null}
     </div>
+  );
+}
+
+function TableCellText({
+  text,
+  title,
+  className,
+}: {
+  text: string;
+  title?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(className)}
+      title={title ?? (text !== "—" ? text : undefined)}
+    >
+      {text}
+    </span>
   );
 }
 

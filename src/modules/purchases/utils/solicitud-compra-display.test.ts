@@ -4,6 +4,7 @@ import {
   compareSolicitudCompraByCodigoDesc,
   nombresProductosSolicitud,
   pesosProductosSolicitud,
+  productosSolicitudTablaResumen,
 } from "./solicitud-compra-display";
 
 const baseSolicitud: SolicitudCompraRow = {
@@ -30,13 +31,38 @@ const baseSolicitud: SolicitudCompraRow = {
         metadatos_catalogo: { titulo: "Salmón entero demo" },
       },
     },
+    {
+      id_linea_solicitud_compra: "line-2",
+      id_producto: "prod-2",
+      cantidad: 10,
+      producto: {
+        sku: "DEMO-SEC",
+        descripcion: "Atún demo",
+        codigo_almacen: "SEC-01",
+        metadatos_catalogo: { titulo: "Atún demo" },
+      },
+    },
+    {
+      id_linea_solicitud_compra: "line-3",
+      id_producto: "prod-3",
+      cantidad: 5,
+      producto: {
+        sku: "DEMO-3",
+        descripcion: "Merluza demo",
+        codigo_almacen: "SEC-02",
+        metadatos_catalogo: { titulo: "Merluza demo" },
+      },
+    },
   ],
 };
 
 describe("solicitud-compra-display", () => {
   it("resume nombres y pesos de líneas", () => {
-    expect(nombresProductosSolicitud(baseSolicitud)).toBe("Salmón entero demo");
+    expect(nombresProductosSolicitud(baseSolicitud)).toContain("Salmón entero demo");
     expect(pesosProductosSolicitud(baseSolicitud)).toContain("kg");
+    expect(productosSolicitudTablaResumen(baseSolicitud)).toBe(
+      "Salmón entero demo · Atún demo…",
+    );
   });
 
   it("ordena por código SOL descendente", () => {

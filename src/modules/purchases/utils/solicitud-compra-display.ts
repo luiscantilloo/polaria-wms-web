@@ -4,6 +4,7 @@ import type {
   SolicitudCompraLineaRow,
   SolicitudCompraRow,
 } from "../types/purchases.types";
+import { resumirProductosTabla } from "./compras-table-display";
 
 export function resolveLineaTitulo(linea: SolicitudCompraLineaRow): string {
   const producto = linea.producto;
@@ -20,12 +21,23 @@ export function resolveLineaTitulo(linea: SolicitudCompraLineaRow): string {
   );
 }
 
-export function nombresProductosSolicitud(solicitud: SolicitudCompraRow): string {
-  const names = (solicitud.lineas ?? [])
+export function listNombresProductosSolicitud(
+  solicitud: SolicitudCompraRow,
+): string[] {
+  return (solicitud.lineas ?? [])
     .map((linea) => resolveLineaTitulo(linea))
     .filter(Boolean);
+}
 
+export function nombresProductosSolicitud(solicitud: SolicitudCompraRow): string {
+  const names = listNombresProductosSolicitud(solicitud);
   return names.length ? names.join(" · ") : "—";
+}
+
+export function productosSolicitudTablaResumen(
+  solicitud: SolicitudCompraRow,
+): string {
+  return resumirProductosTabla(listNombresProductosSolicitud(solicitud));
 }
 
 export function pesosProductosSolicitud(solicitud: SolicitudCompraRow): string {
