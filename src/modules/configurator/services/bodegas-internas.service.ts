@@ -1,6 +1,5 @@
 import {
   DEFAULT_LIST_LIMIT,
-  runDomainMutation,
   runDomainQuery,
 } from "@/lib/supabase/domain-query";
 import { DomainServiceError } from "@/lib/domain-service-error";
@@ -189,28 +188,26 @@ export async function createBodegaInternaConfigurator(
   const { codigoCuenta, codigoEmpresa, nombreComercial } =
     await resolveCuentaAsignada(input.codigoCuenta);
 
-  const inserted = await runDomainMutation<{ id_bodega: string }>((client) => {
-    const query = client
-      .from("bodega")
-      .insert({
-        codigo_cuenta: codigoCuenta,
-        codigo,
-        nombre,
-        tipo: "interna",
-        capacidad_slots: Math.trunc(input.capacidad),
-        id_creador: input.idCreador ?? null,
-        esta_activa: true,
-      })
-      .select("id_bodega")
-      .single();
-
-    return query as unknown as Promise<{
-      data: { id_bodega: string } | null;
-      error: { message: string } | null;
-    }>;
+  const created = await apiRequest<{
+    idBodega: string;
+    capacidadSlots: number | null;
+  }>("/configuracion/bodegas", {
+    method: "POST",
+    auth: true,
+    headers: {
+      [TENANT_HEADER_NAMES.codigoEmpresa]: codigoEmpresa,
+      [TENANT_HEADER_NAMES.codigoCuenta]: codigoCuenta,
+    },
+    body: {
+      codigoCuenta,
+      codigo,
+      nombre,
+      tipo: "interna",
+      capacidadSlots: Math.trunc(input.capacidad),
+    },
   });
 
-  const idBodega = inserted.id_bodega;
+  const idBodega = created.idBodega;
 
   await bootstrapBodegaLayout({
     idBodega,

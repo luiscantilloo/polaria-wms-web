@@ -1,10 +1,11 @@
 import {
   DEFAULT_LIST_LIMIT,
-  runDomainMutation,
   runDomainQuery,
 } from "@/lib/supabase/domain-query";
 import { DomainServiceError } from "@/lib/domain-service-error";
 import { generateCodigoCuentaFromNombre } from "@/lib/generate-codigo-cuenta";
+import { TENANT_HEADER_NAMES } from "@/lib/tenant-headers";
+import { apiRequest } from "@/services/api";
 
 export interface BodegaExternaListRow {
   idBodega: string;
@@ -149,29 +150,26 @@ export async function createBodegaExternaConfigurator(
     input.codigoCuenta,
   );
 
-  const inserted = await runDomainMutation<{ id_bodega: string }>((client) => {
-    const query = client
-      .from("bodega")
-      .insert({
-        codigo_cuenta: codigoCuenta,
-        codigo,
-        nombre,
-        tipo: "externa",
-        capacidad_slots: Math.trunc(input.capacidad),
-        id_creador: input.idCreador ?? null,
-        esta_activa: true,
-      })
-      .select("id_bodega")
-      .single();
-
-    return query as unknown as Promise<{
-      data: { id_bodega: string } | null;
-      error: { message: string } | null;
-    }>;
+  const created = await apiRequest<{
+    idBodega: string;
+    capacidadSlots: number | null;
+  }>("/configuracion/bodegas", {
+    method: "POST",
+    auth: true,
+    headers: {
+      [TENANT_HEADER_NAMES.codigoCuenta]: codigoCuenta,
+    },
+    body: {
+      codigoCuenta,
+      codigo,
+      nombre,
+      tipo: "externa",
+      capacidadSlots: Math.trunc(input.capacidad),
+    },
   });
 
   return {
-    idBodega: inserted.id_bodega,
+    idBodega: created.idBodega,
     nombre,
     capacidad: Math.trunc(input.capacidad),
     bodegaAsignada: nombreComercial,
